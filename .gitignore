@@ -1,0 +1,23 @@
+# ignore all 
+*
+# .. but file with "extensions"
+!*.*
+# .. and directories
+!*/
+# ignore generated files
+*.o
+# ignore backups and temporary files
+*~
+*.orig
+depend
+
+# possibly incomplete positive pattern
+#!*.cpp
+#!*.inc
+!Makefile
+#!modules.mk
+#!*.tex
+#!*.fig
+#!mk
+#!*.ag
+#!Doxyfile

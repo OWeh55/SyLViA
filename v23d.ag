@@ -1,0 +1,85 @@
+#include <string>
+#include <vector>
+#include <limits>
+#include <iostream>
+#include <fstream>
+
+#include <image.h>
+
+#include "v23d.h"
+
+/*AppGen:Global*/
+
+using namespace std;
+
+/*AppGen
+  prog: analyse video from coded light
+  para: filename, optional, string, fnb, Video filename, ""
+
+  opt: f, first, int, first, First frame to use, 0
+  opt: l, last, int, last, Last frame to use, -1
+  opt2: last = -1 for all frames
+  opt: p, period, int, period, Estimated cycle length (as hint for program), -1
+
+  opt: t, threshold, Double, threshold, Threshold for detection, 2
+
+  opt: s, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
+  opt: D, debug, Int, debug, Debug flags (bitwise or), 0
+  opt2:  1 - write gnuplot file in cycle detection
+  opt2:  2 - debug boundary detection
+  opt2:  4 - debug pattern extraction
+  opt: v, verbose, Void, verbose, Be verbose, false
+  opt: h, help, usage, , Hilfe
+AppGen*/
+
+// globals for convenience
+// video
+int nFrames;
+int xSize;
+int ySize;
+
+// sequence of pattern
+int sequenceLength;
+
+/*AppGen:Main*/
+int main(int argc, char** argv)
+{
+  /*AppGen:MainEnd*/
+
+  if (debug != 0)
+    verbose = true;
+  // read video
+  vector<Image> cv;
+  readImages(fnb, cv, first, last);
+
+  nFrames = cv.size();
+  if (verbose)
+    cout << "read " << nFrames << " images" << endl;
+  xSize = cv[0].xsize;
+  ySize = cv[0].ysize;
+
+  // prepare globals for sequence
+  sequenceLength = sequenceDescription.length() * 2 + 2;
+  if (verbose)
+    cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
+
+  vector<double> sequenceBoundaries;
+  analyse(cv, sequenceBoundaries, period);
+  if (verbose)
+    {
+      cout << "period : " << period << endl;
+      int sequences = sequenceBoundaries.size() - 1;
+      cout << "found " << sequences << " sequences" << endl;
+      for (int i = 0; i < sequences; i++)
+        cout << sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
+    }
+
+  vector<vector<ImageD>> extractedPattern;
+  extractPattern(cv, sequenceBoundaries, extractedPattern);
+
+  vector<ImageD> phaseImages;
+  vector<Image> maskImages;
+  calcPhases(extractedPattern, phaseImages, maskImages, threshold);
+
+  return 0;
+}
