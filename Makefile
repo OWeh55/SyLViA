@@ -33,19 +33,7 @@ endif
 $(MAIN): $(OBJECTS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o $(MAIN) $(OBJECTS) $(LIBS)
 
-all: streifen capture_v4l2 pattern slcapture capture patterngen video3d 
-
-pattern: pattern.o streifenlichtprojektor.o
-	$(CXX) $(LOPT) $(LIBRARY) -o pattern  pattern.o streifenlichtprojektor.o $(LIBS)
-
-capture_v4l2: capture_v4l2.o capture_device.o
-	$(CXX) $(LOPT) $(LIBRARY) -o capture_v4l2 capture_v4l2.o capture_device.o $(LIBS)
-
-slcapture: slcapture.o streifenlichtprojektor.o capture_device.o
-	$(CXX) $(LOPT) $(LIBRARY) -o slcapture slcapture.o capture_device.o streifenlichtprojektor.o $(LIBS)
-
-capture: capture.o CaptureDevice.o
-	$(CXX) $(LOPT) $(LIBRARY) -o capture capture.o CaptureDevice.o $(LIBS)
+all: $(MAIN) patterngen 
 
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c

@@ -1,0 +1,291 @@
+#include <string>
+#include <vector>
+#include <iostream>
+
+#include <image.h>
+
+/*AppGen:Global*/
+
+using namespace std;
+
+/*AppGen
+  prog: Create image sequence
+  para: filename, optional, string, fnb, Filename for images/video, ""
+
+  opt: X, xsize, int, sizeX, Bildgroesse X, 848
+  opt: Y, ysize, int, sizeY, Bildgroesse Y, 480
+  opt: H, horizontal, void, horizontal, Streifenmuster horizontal, false
+
+  opt: S, sequence, string, sequence, Bildsequenz-Beschreibung, "P4G1-9cw"
+  opt2:  p + size  - phase shift
+  opt2:  P + size  - phase shift (+inverse)
+  opt2:  g + range - gray code
+  opt2:  G + range - gray code (+inverse)
+  opt2:  b + range - binary code
+  opt2:  B + range - binary code (+inverse)
+  opt2:  c         - black
+  opt2:  w         - white
+
+  opt: r, repeat, int, repeat, Wiederholung des Einzelbildes im Film, 3
+  opt: R, srepeat, int, srepeat, Wiederholung der Sequenz im Film, 1
+
+  opt: s, singleimage, void, singleImage, Einzelbild erzeugen, false
+
+  opt: f, framespersecond, int, fps, Bilder pro Sekunde, 30
+
+  opt: d, display, void, display, Darstellung der Bilder, false
+  opt: w, wait, Void, wait, Warten nach jedem Bild, false
+  opt: v, verbose, Void, verbose, Viele Meldungen, false
+AppGen*/
+
+void makeImage(const vector<bool>& pattern, const Image& img, bool horizontal)
+{
+  if (horizontal)
+    {
+      for (int y = 0; y < img.ysize; y++)
+        {
+          int v = pattern[y] ? 255 : 0;
+          for (int x = 0; x < img.xsize; x++)
+            img.setPixel(x, y, v);
+        }
+    }
+  else
+    {
+      for (int y = 0; y < img.ysize; y++)
+        for (int x = 0; x < img.xsize; x++)
+          {
+            int v = pattern[x] ? 255 : 0;
+            img.setPixel(x, y, v);
+          }
+    }
+}
+
+void writeImage(const Image& img, int repeat, VideoFile& vf)
+{
+  if (vf.isOpen())
+    {
+      for (int i = 0; i < repeat; i++)
+        vf.write(img);
+    }
+
+  if (wait)
+    GetChar();
+}
+
+vector<bool> makePhaseShift(int nCols, int phase, int nPattern)
+{
+  vector<bool> result;
+  for (int i = 0; i < nPattern; i++)
+    {
+      int k = ((i - phase) % nCols + nCols) % nCols;
+      result.push_back(k < nCols / 2);
+    }
+  return result;
+}
+
+vector<bool> makeGrayCode(int bit, int nPattern)
+{
+  vector<bool> result;
+  int mask = 1 << bit;
+  for (int i = 0; i < nPattern; ++i)
+    {
+      int graycode = i ^ (i >> 1);
+      result.push_back((graycode & mask) != 0);
+    }
+  return result;
+}
+
+vector<bool> makeBinaryCode(int bit, int nPattern)
+{
+  vector<bool> result;
+  int mask = 1 << bit;
+  for (int i = 0; i < nPattern; ++i)
+    {
+      int binaryCode = i;
+      result.push_back((binaryCode & mask) != 0);
+    }
+  return result;
+}
+
+vector<bool> inverse(const vector<bool>& v)
+{
+  vector<bool> result(v.size());
+  for (int i = 0; i < v.size(); i++)
+    result[i] = !v[i];
+  return result;
+}
+
+int getP(const string& sequence, int& i)
+{
+  int result;
+  if (i >= sequence.size())
+    throw "Parameter missing";
+  char c = toupper(sequence[i]);
+  i++;
+  if (c >= '0' && c <= '9')
+    {
+      result = c - '0';
+    }
+  else if (c >= 'A' && c <= 'Z')
+    result = c - 'A' + 10;
+  else
+    throw "wrong Parameter";
+  return result;
+}
+
+void getRange(const string& sequence, int& i, int& first, int& last)
+{
+  first = getP(sequence, i);
+  last = first;
+  if (sequence[i] == '-')
+    {
+      i++;
+      last = getP(sequence, i);
+    }
+}
+/*AppGen:Main*/
+int main(int argc, char** argv)
+{
+  /*AppGen:MainEnd*/
+  try
+    {
+      if (fnb.empty() || wait)
+        display = true;
+
+      if (display)
+        wait = true;
+
+      Image img;
+      img.create(sizeX, sizeY, 255);
+      if (display)
+        Show(ON, img);
+
+      int nPattern = horizontal ? sizeY : sizeX;
+      vector<vector<bool> > patterns;
+
+      if (verbose)
+        cout << "Erzeuge Muster" << endl;
+
+      int i = 0;
+      while (i < sequence.size())
+        {
+          char pc = sequence[i];
+          if (verbose)
+            {
+              cout << pc;
+              cout.flush();
+            }
+          switch (pc)
+            {
+            case 'P':
+            case 'p':
+            {
+              i++;
+              int nCols = getP(sequence, i);
+              for (int k = 0; k < nCols / 2; k++)
+                {
+                  patterns.push_back(makePhaseShift(nCols, k, nPattern));
+                  if (pc == 'P')
+                    patterns.push_back(inverse(patterns.back()));
+                }
+              break;
+            }
+            case 'g':
+            case 'G':
+            {
+              i++;
+              int first, last;
+              getRange(sequence, i, first, last);
+              for (int i = first; i <= last; i++)
+                {
+                  patterns.push_back(makeGrayCode(i, nPattern));
+                  if (pc == 'G')
+                    patterns.push_back(inverse(patterns.back()));
+                }
+              break;
+            }
+            case 'b':
+            case 'B':
+            {
+              i++;
+              int first, last;
+              getRange(sequence, i, first, last);
+              for (int i = first; i <= last; i++)
+                {
+                  patterns.push_back(makeBinaryCode(i, nPattern));
+                  if (pc == 'B')
+                    patterns.push_back(inverse(patterns.back()));
+                }
+              break;
+            }
+            case 'c':
+            {
+              i++;
+              patterns.push_back(vector<bool>(nPattern, true));
+              break;
+            }
+            case 'w':
+            {
+              i++;
+              patterns.push_back(vector<bool>(nPattern, false));
+              break;
+            }
+            default:
+              throw "Wrong character in description";
+            }
+        }
+      if (verbose)
+        cout << endl;
+      if (singleImage)
+        {
+          int nPatterns = patterns.size();
+          if (horizontal)
+            {
+              for (int y = 0; y < sizeY; y++)
+                for (int x = 0; x < sizeX; x++)
+                  {
+                    int p = x * nPatterns / sizeX;
+                    img.setPixel(x, y, patterns[p][y] ? 255 : 0);
+                  }
+            }
+          else
+            {
+              for (int y = 0; y < sizeY; y++)
+                for (int x = 0; x < sizeX; x++)
+                  {
+                    int p = y * nPatterns / sizeY;
+                    img.setPixel(x, y, patterns[p][x] ? 255 : 0);
+                  }
+            }
+          if (!fnb.empty())
+            img.write(fnb);
+          if (wait)
+            GetChar();
+        }
+      else
+        {
+          VideoFile vf;
+          if (!fnb.empty())
+            {
+              vf.open(fnb, ios_base::out);
+              vf.setPara(sizeX, sizeY, 255, fps);
+            }
+
+          for (int r = 0; r < srepeat; r++)
+            {
+              if (verbose)
+                cout << "Sequenz " << (r + 1) << " von " << srepeat << endl;
+              for (int k = 0; k < patterns.size(); k++)
+                {
+                  makeImage(patterns[k], img, horizontal);
+                  writeImage(img, repeat, vf);
+                }
+            }
+        }
+    }
+  catch (const char* msg)
+    {
+      cerr << "Exception: " << msg << endl;
+    }
+  return OK;
+}
