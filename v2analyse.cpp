@@ -57,9 +57,10 @@ void analysis(const std::vector<ice::Image>& cv,
   cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
   // we apply a "high pass" to suppress slow changes
   // 0.1 Hz <-> 10 s <-> fps*10 Frames
-  int hp = nFrames / fps / 10;
+  int hp = (double)nFrames / fps / 10;
   if (hp < 2)
     hp = 2;
+  cout << "Hochpass: " << hp << " (" << hp * 2 << ")" << endl;
   double gfMax = findMaxBetween(gps, 2 * hp, 2 * nFrames / sequenceLength / 2) / 2;
   if (verbose)
     {

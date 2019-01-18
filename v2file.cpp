@@ -24,6 +24,7 @@ void readImages(const string& fn,
 
   ColorImage in;
   in.create(xo, yo, mv);
+  Show(ON, in);
 
   while (input.FrameNumber() < first &&
          input.read())
@@ -46,30 +47,40 @@ void readImages(const string& fn,
       g.create(xo, yo, mv);
 
       WindowWalker ww(g);
-      for (ww.init(); !ww.ready(); ww.next())
-        {
-          int gv = 0;
-          ColorValue cv = in.getPixelUnchecked(ww);
-          switch (colorMode)
-            {
-            case 'r':
-              gv = cv.red;
-              break;
-            case 'g':
-              gv = cv.green;
-              break;
-            case 'b':
-              gv = cv.blue;
-              break;
-            case 'i':
-              gv = cv.getGray();
-              break;
-            }
-          g.setPixelUnchecked(ww, gv);
-        }
 
+      switch (colorMode)
+        {
+        case 'r':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww);
+              g.setPixelUnchecked(ww, cv.red);
+            }
+          break;
+        case 'g':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww);
+              g.setPixelUnchecked(ww, cv.green);
+            }
+          break;
+        case 'b':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww);
+              g.setPixelUnchecked(ww, cv.blue);
+            }
+          break;
+        case 'i':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww);
+              g.setPixelUnchecked(ww, cv.getGray());
+            }
+          break;
+        }
       ivector.push_back(g);
-      in.create(xo, yo, mv); // recreate input image
+      // in.create(xo, yo, mv); // recreate input image
       if (verbose)
         if (frames % 100 == 0)
           {
@@ -77,6 +88,7 @@ void readImages(const string& fn,
             cout << " (" << frames << " frames)" << endl;;
           }
     }
+  Show(OFF, in);
 }
 
 void readImages(const string& fn,
