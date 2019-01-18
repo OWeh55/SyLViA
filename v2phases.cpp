@@ -20,7 +20,10 @@ int decodeGrayCode(const vector<ImageD>& seq,
     {
       ungray[getGrayCode(i)] = i;
     }
-
+  /*
+  for (int i = 2; i < seq.size(); i++)
+    Show(GRAY,const_cast<ImageD&>(seq[i]),"image "+to_string(i));
+  */
   for (int y = 0; y < ySize; ++y)
     for (int x = 0; x < xSize; ++x)
       {
@@ -28,7 +31,8 @@ int decodeGrayCode(const vector<ImageD>& seq,
         int bit = 0x100; // MSB first
         bool good = true;
 
-        for (int i = 2; i < seq.size() && good; i += 2, bit >>= 1)
+        //        for (int i = 2; i < seq.size() && good; i += 2, bit >>= 1)
+        for (int i = 2; i < seq.size() && good; i += 1, bit >>= 1)
           {
             double difg = seq[i].getPixel(x, y);
             good = abs(difg) >= minlevel;
@@ -45,6 +49,11 @@ int decodeGrayCode(const vector<ImageD>& seq,
             mask.setPixel(x, y, 1); // invalid stripNr
           }
       }
+  /*
+  GetChar();
+  for (int i = 2; i < seq.size(); i++)
+    Show(OFF,const_cast<ImageD&>(seq[i]));
+  */
   return 0;
 }
 
@@ -57,6 +66,8 @@ int calcPhases(const vector<ImageD>& img,
   phase.set(0.0);
   mask.create(xSize, ySize);
   mask.set(0); // all valid
+  Show(OVERLAY, mask);
+  Show(GRAY, phase);
 
   decodeGrayCode(img, phase, mask, minlevel);
 
@@ -78,7 +89,7 @@ int calcPhases(const vector<ImageD>& img,
             if ((fic > 3 * M_PI / 2) && (fil == 0)) fih--; // fil=3
             if ((fic < M_PI / 2) && (fil == 3)) fih++; // fil=0
 
-            cout << fih << " " << fic << endl;
+            // cout << fih << " " << fic << endl;
             phase.setPixel(x, y, fih + (fic / (2 * M_PI)));
 
             if ((s * s + c * c) < minlevel)
@@ -87,6 +98,10 @@ int calcPhases(const vector<ImageD>& img,
               }
           }
       }
+  phase.adaptLimits();
+  GetChar();
+  Show(OFF, mask);
+  Show(OFF, phase);
   return 0;
 }
 

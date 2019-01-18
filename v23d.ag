@@ -19,11 +19,16 @@ using namespace std;
   opt: f, first, int, first, First frame to use, 0
   opt: l, last, int, last, Last frame to use, -1
   opt2: last = -1 for all frames
-  opt: p, period, int, period, Estimated cycle length (as hint for program), -1
+  opt: p, period, int, period, Approximate cycle length (as hint for program), -1
 
   opt: t, threshold, Double, threshold, Threshold for detection, 2
 
   opt: s, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
+  opt2: Meaning of characters
+  opt2: s - sinus function
+  opt2: c - sinus function
+  opt2: 1,2,...,9 - gray code bit
+  opt2: Sequence is expected to start with black to white change
   opt: D, debug, Int, debug, Debug flags (bitwise or), 0
   opt2:  1 - write gnuplot file in cycle detection
   opt2:  2 - debug boundary detection
@@ -45,41 +50,50 @@ int sequenceLength;
 int main(int argc, char** argv)
 {
   /*AppGen:MainEnd*/
-
-  if (debug != 0)
-    verbose = true;
-  // read video
-  vector<Image> cv;
-  readImages(fnb, cv, first, last);
-
-  nFrames = cv.size();
-  if (verbose)
-    cout << "read " << nFrames << " images" << endl;
-  xSize = cv[0].xsize;
-  ySize = cv[0].ysize;
-
-  // prepare globals for sequence
-  sequenceLength = sequenceDescription.length() * 2 + 2;
-  if (verbose)
-    cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
-
-  vector<double> sequenceBoundaries;
-  analyse(cv, sequenceBoundaries, period);
-  if (verbose)
+  try
     {
-      cout << "period : " << period << endl;
-      int sequences = sequenceBoundaries.size() - 1;
-      cout << "found " << sequences << " sequences" << endl;
-      for (int i = 0; i < sequences; i++)
-        cout << sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
+      if (debug != 0)
+        verbose = true;
+      // read video
+      vector<Image> cv;
+      readImages(fnb, cv, first, last);
+
+      nFrames = cv.size();
+      if (verbose)
+        cout << "read " << nFrames << " images" << endl;
+      xSize = cv[0].xsize;
+      ySize = cv[0].ysize;
+
+      // prepare globals for sequence
+      sequenceLength = sequenceDescription.length() * 2 + 2;
+      if (verbose)
+        cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
+
+      vector<double> sequenceBoundaries;
+      analysis(cv, sequenceBoundaries, period);
+      if (verbose)
+        {
+          cout << "period : " << period << endl;
+          int sequences = sequenceBoundaries.size() - 1;
+          cout << "found " << sequences << " sequences" << endl;
+          for (int i = 0; i < sequences; i++)
+            cout << sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
+        }
+
+      vector<vector<ImageD>> extractedPattern;
+      extractPattern(cv, sequenceBoundaries, extractedPattern);
+
+      vector<ImageD> phaseImages;
+      vector<Image> maskImages;
+      calcPhases(extractedPattern, phaseImages, maskImages, threshold);
     }
-
-  vector<vector<ImageD>> extractedPattern;
-  extractPattern(cv, sequenceBoundaries, extractedPattern);
-
-  vector<ImageD> phaseImages;
-  vector<Image> maskImages;
-  calcPhases(extractedPattern, phaseImages, maskImages, threshold);
-
+  catch (IceException& ex)
+    {
+      cerr << "exception: " << ex.what() << endl;
+    }
+  catch (const char* msg)
+    {
+      cerr << "exception: " << msg << endl;
+    }
   return 0;
 }

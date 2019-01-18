@@ -31,26 +31,29 @@ double graySum(const Image& img)
   return double(gsum) / n;
 }
 
-void analyse(const std::vector<ice::Image>& cv, vector<double>& sb,
-             int period /* =0 */)
+void analysis(const std::vector<ice::Image>& cv, vector<double>& sb,
+              int period /* =0 */)
 {
   vector<double> g(nFrames);
   for (int i = 0; i < nFrames; i++)
     g[i] = graySum(cv[i]);
+
+  zeroPadding(g, 0, nFrames);
   if (debug & 1)
-    writePlotFile("g.gp", g);
+    writePlotFile("gvs.gp", g);
 
   vector<double> dg(nFrames - 1);
   for (int i = 0; i < nFrames - 1; i++)
     dg[i] = absGrayDiff(cv[i], cv[i + 1]);
+  zeroPadding(dg, 1, nFrames);
   if (debug & 1)
-    writePlotFile("dg.gp", dg);
+    writePlotFile("gvadiff.gp", dg);
 
   vector<double> gps = powerSpectrum(g);
   if (debug & 1)
-    writePlotFile("gps.gp", gps);
-  //cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
-  double gfMax = findMaxBetween(gps, 2, nFrames / sequenceLength / 2);
+    writePlotFile("gvps.gp", gps);
+  cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
+  double gfMax = findMaxBetween(gps, 2, 2 * nFrames / sequenceLength / 2) / 2;
   if (verbose)
     {
       cout << "Frequence of sequence: " << gfMax << endl;
@@ -59,11 +62,11 @@ void analyse(const std::vector<ice::Image>& cv, vector<double>& sb,
 
   vector<double> dgps = powerSpectrum(dg);
   if (debug & 1)
-    writePlotFile("dgps.gp", dgps);
-  //  cout << "estimation: " <<  sequenceLength* gfMax << endl;
+    writePlotFile("gvadps.gp", dgps);
+  cout << "estimation: " <<  sequenceLength* gfMax << endl;
   //  cout << "+/- : " << sequenceLength* gfMax / 2 << endl;
-  double pfMax = findMaxAround(dgps, sequenceLength * gfMax,
-                               sequenceLength * gfMax / 2);
+  double pfMax = findMaxAround(dgps, 2 * sequenceLength * gfMax,
+                               sequenceLength * gfMax / 2) / 2;
   if (verbose)
     {
       cout << "Frequence of pattern: " << pfMax << endl;
@@ -80,9 +83,10 @@ void analyse(const std::vector<ice::Image>& cv, vector<double>& sb,
     // use estimation from spectra
     period = nFrames / pfMax * sequenceLength;
 
-  vector<double> ac = autoCorrelationFromPowerSpectrum(gps);
+  //  vector<double> ac = autoCorrelationFromPowerSpectrum(gps);
+  vector<double> ac = autoCorrelation(g);
   if (debug & 1)
-    writePlotFile("gac.gp", ac);
+    writePlotFile("gvac.gp", ac);
 
   double sLen = findMaxBetween(ac, 8 * period / 10, 12 * period / 10);
   if (verbose)
@@ -100,7 +104,7 @@ void analyse(const std::vector<ice::Image>& cv, vector<double>& sb,
   vector<double> dAverage = dt(average);
 
   if (debug & 1)
-    writePlotFile("ave.gp", average);
+    writePlotFile("averagegv.gp", average);
 
   double x0 = findMaxBetween(dAverage);
   if (verbose)
@@ -108,7 +112,7 @@ void analyse(const std::vector<ice::Image>& cv, vector<double>& sb,
 
   vector<double> gc = dt(g); // \delta g_i
   if (debug & 1)
-    writePlotFile("delta.gp", gc);
+    writePlotFile("gvdt.gp", gc);
 
   sb.clear();
   double x = x0;
@@ -173,24 +177,24 @@ double graySum(const ColorImage& img)
   return double(gsum) / n;
 }
 
-void analyse(const std::vector<ice::ColorImage>& cv, vector<double>& sb,
-             int period /* =0 */)
+void analysis(const std::vector<ice::ColorImage>& cv, vector<double>& sb,
+              int period)
 {
   vector<double> g(nFrames);
   for (int i = 0; i < nFrames; i++)
     g[i] = graySum(cv[i]);
   if (debug & 1)
-    writePlotFile("g.gp", g);
+    writePlotFile("cvs.gp", g);
 
   vector<double> dg(nFrames - 1);
   for (int i = 0; i < nFrames - 1; i++)
     dg[i] = absGrayDiff(cv[i], cv[i + 1]);
   if (debug & 1)
-    writePlotFile("dg.gp", dg);
+    writePlotFile("cvadiff.gp", dg);
 
   vector<double> gps = powerSpectrum(g);
   if (debug & 1)
-    writePlotFile("gps.gp", gps);
+    writePlotFile("cvps.gp", gps);
   //cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
   double gfMax = findMaxBetween(gps, 2, nFrames / sequenceLength / 2);
   if (verbose)
@@ -201,7 +205,7 @@ void analyse(const std::vector<ice::ColorImage>& cv, vector<double>& sb,
 
   vector<double> dgps = powerSpectrum(dg);
   if (debug & 1)
-    writePlotFile("dgps.gp", dgps);
+    writePlotFile("cvadps.gp", dgps);
   //  cout << "estimation: " <<  sequenceLength* gfMax << endl;
   //  cout << "+/- : " << sequenceLength* gfMax / 2 << endl;
   double pfMax = findMaxAround(dgps, sequenceLength * gfMax,
@@ -224,14 +228,14 @@ void analyse(const std::vector<ice::ColorImage>& cv, vector<double>& sb,
 
   vector<double> ac = autoCorrelationFromPowerSpectrum(gps);
   if (debug & 1)
-    writePlotFile("gac.gp", ac);
+    writePlotFile("cvac.gp", ac);
 
   double sLen = findMaxBetween(ac, 8 * period / 10, 12 * period / 10);
   if (verbose)
     cout << "Cycle len from autocorrelation: " << sLen << endl;
 
   int iLen = sLen;
-  // split video in parts of len sLen and average values
+  // split video into parts of len sLen and average values
   vector<double> average(iLen, 0.0);
   for (int i = 0; i + iLen <= g.size(); i += iLen) // all parts fully inside
     {
@@ -244,13 +248,14 @@ void analyse(const std::vector<ice::ColorImage>& cv, vector<double>& sb,
   if (debug & 1)
     writePlotFile("ave.gp", average);
 
+  // find maximum change
   double x0 = findMaxBetween(dAverage);
   if (verbose)
     cout << "coarse boundaries: " << x0 << "  + k * " << sLen << endl;
 
   vector<double> gc = dt(g); // \delta g_i
   if (debug & 1)
-    writePlotFile("delta.gp", gc);
+    writePlotFile("cvdt.gp", gc);
 
   sb.clear();
   double x = x0;

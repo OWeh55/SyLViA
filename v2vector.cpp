@@ -45,6 +45,7 @@ double findMaxAround(const vector<double>& dg, int is, int di)
   return findMaxBetween(dg, i1, i2);
 }
 
+// cyclic differences between elements
 vector<double> dt(const vector<double>& v)
 {
   vector<double> result(v.size());
