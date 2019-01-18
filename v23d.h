@@ -33,12 +33,14 @@ void writePlotFile(const std::string& name, const std::vector<double>& v);
 void writePlotFile(const std::string& name, const std::vector<double>& v1, const std::vector<double>& v2);
 
 // v2analyse
+/*
 void analysis(const std::vector<ice::ColorImage>& cv,
               vector<double>& sequenceBoundaries,
-              int estimatedPeriod = 0);
+              int & estimatedPeriod);
+*/
 void analysis(const std::vector<ice::Image>& cv,
               vector<double>& sequenceBoundaries,
-              int estimatedPeriod = 0);
+              int& estimatedPeriod);
 
 // v2extract
 void extractPattern(const std::vector<ice::ColorImage>& cv,

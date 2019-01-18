@@ -46,7 +46,7 @@ void getPattern(const std::vector<ice::Image>& cv,
       double i1 = idx1 + (1 + i * 2) * dIdx;
       double i2 = idx1 + (1 + i * 2 + 1) * dIdx;
       double i3 = idx1 + (1 + i * 2 + 2) * dIdx;
-      //cout << "pattern " << i << ": " << i1 << " ... " << i2 << " ... " << i3 << endl;
+      cout << "pattern " << i << ": " << i1 << " ... " << i2 << " ... " << i3 << endl;
       getImage(cv, i1, i2, pos);
       getImage(cv, i2, i3, neg);
       WindowWalker ww(cv[i]);
