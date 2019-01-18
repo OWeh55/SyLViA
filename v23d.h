@@ -23,9 +23,11 @@ extern bool verbose;
 extern int debug;
 
 // v2file.cpp
-void readImages(const std::string& fn, std::vector<ice::ColorImage>& ivector,
+void readImages(const std::string& fn,
+                std::vector<ice::ColorImage>& ivector, int& fps,
                 int first = 0, int last = -1);
-void readImages(const string& fn, vector<Image>& ivector,
+void readImages(const string& fn,
+                std::vector<Image>& ivector, int& fps,
                 int first = 0, int last = -1,
                 int colorMode = 'i');
 
@@ -39,6 +41,7 @@ void analysis(const std::vector<ice::ColorImage>& cv,
               int & estimatedPeriod);
 */
 void analysis(const std::vector<ice::Image>& cv,
+              int fps,
               vector<double>& sequenceBoundaries,
               int& estimatedPeriod);
 

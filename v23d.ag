@@ -56,9 +56,12 @@ int main(int argc, char** argv)
         verbose = true;
       // read video
       vector<Image> cv;
-      readImages(fnb, cv, first, last);
+      int fps = 0;
+      readImages(fnb, cv, fps, first, last, 'g');
 
       nFrames = cv.size();
+      if (nFrames == 0)
+        throw IceException("readImages", "No frames read");
       if (verbose)
         cout << "read " << nFrames << " images" << endl;
       xSize = cv[0].xsize;
@@ -70,7 +73,7 @@ int main(int argc, char** argv)
         cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
 
       vector<double> sequenceBoundaries;
-      analysis(cv, sequenceBoundaries, period);
+      analysis(cv, fps, sequenceBoundaries, period);
       if (verbose)
         {
           cout << "period : " << period << endl;
@@ -89,11 +92,11 @@ int main(int argc, char** argv)
     }
   catch (IceException& ex)
     {
-      cerr << "exception: " << ex.what() << endl;
+      cerr << "exception (ICE): " << ex.what() << endl;
     }
   catch (const char* msg)
     {
-      cerr << "exception: " << msg << endl;
+      cerr << "exception (char*): " << msg << endl;
     }
   return 0;
 }

@@ -31,7 +31,9 @@ double graySum(const Image& img)
   return double(gsum) / n;
 }
 
-void analysis(const std::vector<ice::Image>& cv, vector<double>& sb,
+void analysis(const std::vector<ice::Image>& cv,
+              int fps,
+              vector<double>& sb,
               int& period /* =0 */)
 {
   vector<double> g(nFrames);
@@ -53,10 +55,15 @@ void analysis(const std::vector<ice::Image>& cv, vector<double>& sb,
   if (debug & 1)
     writePlotFile("gvps.gp", gps);
   cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
-  double gfMax = findMaxBetween(gps, 2, 2 * nFrames / sequenceLength / 2) / 2;
+  // we apply a "high pass" to suppress slow changes
+  // 0.1 Hz <-> 10 s <-> fps*10 Frames
+  int hp = nFrames / fps / 10;
+  if (hp < 2)
+    hp = 2;
+  double gfMax = findMaxBetween(gps, 2 * hp, 2 * nFrames / sequenceLength / 2) / 2;
   if (verbose)
     {
-      cout << "Frequence of sequence: " << gfMax << endl;
+      cout << "Sequences: " << gfMax << endl;
       cout << "Estimated sequence length: " << nFrames / gfMax << endl;
     }
 

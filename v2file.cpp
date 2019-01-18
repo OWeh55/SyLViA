@@ -5,11 +5,13 @@
 
 using namespace std;
 
-void readImages(const string& fn, vector<Image>& ivector,
+void readImages(const string& fn,
+                vector<Image>& ivector,
+                int& fps,
                 int first, int last,
                 int colorMode)
 {
-  int xo, yo, mv, fps;
+  int xo, yo, mv;
 
   VideoFile input(fn);
   input.getPara(xo, yo, mv, fps);
@@ -22,6 +24,7 @@ void readImages(const string& fn, vector<Image>& ivector,
 
   ColorImage in;
   in.create(xo, yo, mv);
+
   while (input.FrameNumber() < first &&
          input.read())
     {
@@ -76,10 +79,11 @@ void readImages(const string& fn, vector<Image>& ivector,
     }
 }
 
-void readImages(const string& fn, vector<ColorImage>& ivector,
+void readImages(const string& fn,
+                vector<ColorImage>& ivector, int& fps,
                 int first, int last)
 {
-  int xo, yo, mv, fps;
+  int xo, yo, mv;
 
   VideoFile input(fn);
   input.getPara(xo, yo, mv, fps);
