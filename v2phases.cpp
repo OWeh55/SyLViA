@@ -66,8 +66,9 @@ int calcPhases(const vector<ImageD>& img,
   phase.set(0.0);
   mask.create(xSize, ySize);
   mask.set(0); // all valid
-  Show(OVERLAY, mask);
-  Show(GRAY, phase);
+
+  //  Show(OVERLAY, mask);
+  //  Show(GRAY, phase);
 
   decodeGrayCode(img, phase, mask, minlevel);
 
@@ -99,9 +100,9 @@ int calcPhases(const vector<ImageD>& img,
           }
       }
   phase.adaptLimits();
-  GetChar();
-  Show(OFF, mask);
-  Show(OFF, phase);
+  //  GetChar();
+  //  Show(OFF, mask);
+  //  Show(OFF, phase);
   return 0;
 }
 

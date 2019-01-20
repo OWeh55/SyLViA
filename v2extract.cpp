@@ -63,27 +63,41 @@ void extractPattern(const std::vector<ice::Image>& cv,
                     vector<double>& sb,
                     std::vector<std::vector<ImageD>>& extractedPattern)
 {
+  int xSize=cv[0].xsize;
+  int ySize=cv[0].ysize;
   int nPattern = sequenceDescription.length();
+  Image debugImg;
+  if (debug & 4)
+    {
+      debugImg.create(xSize, ySize*nPattern);
+      Show(GRAY, debugImg, "extracted");
+      Zoom(debugImg, -2);
+    }
   extractedPattern.clear();
-  for (int i = 0; i < sb.size() - 1; i++)
+  for (int k = 0; k < sb.size() - 1; k++)
     {
       vector<ImageD> sp(nPattern);
       for (int i = 0; i < nPattern; i++)
+	sp[i].create(xSize, ySize, -100, 100);
+      
+      getPattern(cv, sb[k], sb[k + 1], sp);
+
+      for (int i = 0; i < nPattern; i++)
         {
-          sp[i].create(xSize, ySize, -100, 100);
           if (debug & 4)
             {
-              Show(GRAY, sp[i], "image " + to_string(i));
-              Zoom(sp[i], -4);
+	      Window aw(0,ySize*i,xSize-1,ySize*i+ySize-1);
+	      ConvImgDImg(sp[i],debugImg(aw),ADAPTIVE,SIGNED);
             }
         }
-      getPattern(cv, sb[i], sb[i + 1], sp);
+      
       extractedPattern.push_back(sp);
       if (debug & 4)
         {
+	  Printf("Pattern %.2f .. %.2f ", sb[k], sb[k+1]);
           GetChar();
-          for (int i = 0; i < nPattern; i++)
-            Show(OFF, sp[i]);
         }
     }
+  if (debug & 4)
+    Show(OFF,debugImg);
 }
