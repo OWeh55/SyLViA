@@ -24,7 +24,8 @@ void readImages(const string& fn,
 
   ColorImage in;
   in.create(xo, yo, mv);
-  Show(ON, in);
+  if (debug & 16)
+    Show(ON, in);
 
   while (input.FrameNumber() < first &&
          input.read())
@@ -88,7 +89,8 @@ void readImages(const string& fn,
             cout << " (" << frames << " frames)" << endl;;
           }
     }
-  Show(OFF, in);
+  if (debug & 16)
+    Show(OFF, in);
 }
 
 void readImages(const string& fn,

@@ -16,8 +16,8 @@ using namespace std;
   prog: analyse video from coded light
   para: filename, optional, string, fnb, Video filename, ""
 
-  opt: f, first, int, first, First frame to use, 0
-  opt: l, last, int, last, Last frame to use, -1
+  opt: F, first, int, first, First frame to use, 0
+  opt: L, last, int, last, Last frame to use, -1
   opt2: last = -1 for all frames
   opt: p, period, int, period, Approximate cycle length (as hint for program), -1
 
@@ -28,11 +28,14 @@ using namespace std;
   opt2: s - sinus function
   opt2: c - sinus function
   opt2: 1,2,...,9 - gray code bit
+  opt2: all pattern are projected as positive and negative
   opt2: Sequence is expected to start with black to white change
   opt: D, debug, Int, debug, Debug flags (bitwise or), 0
-  opt2:  1 - write gnuplot file in cycle detection
+  opt2:  1 - write gnuplot files in cycle detection
   opt2:  2 - debug boundary detection
   opt2:  4 - debug pattern extraction
+  opt2:  8 - debug phase detection
+  opt2: 16 - debug read video
   opt: v, verbose, Void, verbose, Be verbose, false
   opt: h, help, usage, , Hilfe
 AppGen*/
