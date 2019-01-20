@@ -54,21 +54,21 @@ void readImages(const string& fn,
           for (ww.init(); !ww.ready(); ww.next())
             {
               ColorValue cv = in.getPixelUnchecked(ww);
-              g.setPixelUnchecked(ww, cv.red);
+              g.setPixelUnchecked(ww, mv - cv.red);
             }
           break;
         case 'g':
           for (ww.init(); !ww.ready(); ww.next())
             {
               ColorValue cv = in.getPixelUnchecked(ww);
-              g.setPixelUnchecked(ww, cv.green);
+              g.setPixelUnchecked(ww, mv - cv.green);
             }
           break;
         case 'b':
           for (ww.init(); !ww.ready(); ww.next())
             {
               ColorValue cv = in.getPixelUnchecked(ww);
-              g.setPixelUnchecked(ww, cv.blue);
+              g.setPixelUnchecked(ww, mv - cv.blue);
             }
           break;
         case 'i':

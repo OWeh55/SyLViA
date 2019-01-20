@@ -52,7 +52,7 @@ vector<double> dt(const vector<double>& v)
   double last = v.back();
   for (int i = 0; i < v.size(); i++)
     {
-      result[i] = v[i] - last;
+      result[i] = -(v[i] - last);
       last = v[i];
     }
   return result;

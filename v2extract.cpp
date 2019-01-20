@@ -19,10 +19,10 @@ void getImage(const std::vector<ice::Image>& cv,
               sp.setPixel(ww, sp.getPixel(ww) + v);
             }
           /*
-          Show(GRAY,cv[i]);
-          cout << i << " ";
-          GetChar();
-          Show(OFF,cv[i]);
+          Show(GRAY,cv[i],"image " + to_string(i));
+                cout << i << " ";
+                GetChar();
+                Show(OFF,cv[i]);
           */
         }
     }
@@ -63,13 +63,13 @@ void extractPattern(const std::vector<ice::Image>& cv,
                     vector<double>& sb,
                     std::vector<std::vector<ImageD>>& extractedPattern)
 {
-  int xSize=cv[0].xsize;
-  int ySize=cv[0].ysize;
+  int xSize = cv[0].xsize;
+  int ySize = cv[0].ysize;
   int nPattern = sequenceDescription.length();
   Image debugImg;
   if (debug & 4)
     {
-      debugImg.create(xSize, ySize*nPattern);
+      debugImg.create(xSize, ySize * nPattern);
       Show(GRAY, debugImg, "extracted");
       Zoom(debugImg, -2);
     }
@@ -78,26 +78,26 @@ void extractPattern(const std::vector<ice::Image>& cv,
     {
       vector<ImageD> sp(nPattern);
       for (int i = 0; i < nPattern; i++)
-	sp[i].create(xSize, ySize, -100, 100);
-      
+        sp[i].create(xSize, ySize, -100, 100);
+
       getPattern(cv, sb[k], sb[k + 1], sp);
 
       for (int i = 0; i < nPattern; i++)
         {
           if (debug & 4)
             {
-	      Window aw(0,ySize*i,xSize-1,ySize*i+ySize-1);
-	      ConvImgDImg(sp[i],debugImg(aw),ADAPTIVE,SIGNED);
+              Window aw(0, ySize * i, xSize - 1, ySize * i + ySize - 1);
+              ConvImgDImg(sp[i], debugImg(aw), ADAPTIVE, SIGNED);
             }
         }
-      
+
       extractedPattern.push_back(sp);
       if (debug & 4)
         {
-	  Printf("Pattern %.2f .. %.2f ", sb[k], sb[k+1]);
+          Printf("Pattern %.2f .. %.2f\n", sb[k], sb[k + 1]);
           GetChar();
         }
     }
   if (debug & 4)
-    Show(OFF,debugImg);
+    Show(OFF, debugImg);
 }
