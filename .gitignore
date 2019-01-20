@@ -6,6 +6,9 @@
 !*/
 # ignore generated files
 *.o
+# ignore test data
+p1
+test.avi
 # ignore backups and temporary files
 *~
 *.orig
