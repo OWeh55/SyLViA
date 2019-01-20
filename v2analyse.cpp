@@ -34,7 +34,7 @@ double graySum(const Image& img)
 void analysis(const std::vector<ice::Image>& cv,
               int fps,
               vector<double>& sb,
-              int& period /* =0 */)
+              int& cycleLength, int& cycleStart)
 {
   vector<double> g(nFrames);
   for (int i = 0; i < nFrames; i++)
@@ -82,23 +82,23 @@ void analysis(const std::vector<ice::Image>& cv,
       cout << "Corrected sequence length: " << nFrames / pfMax* sequenceLength << endl;
     }
 
-  if (period > 0)
+  if (cycleLength > 0)
     {
       if (verbose)
-        cout << "using given estimation of period: " << period << endl;
+        cout << "using given cycle length: " << cycleLength << endl;
     }
   else
-    // use estimation from spectra
-    period = nFrames / pfMax * sequenceLength;
+    // use estimation from spectrum
+    cycleLength = nFrames / pfMax * sequenceLength;
 
   //  vector<double> ac = autoCorrelationFromPowerSpectrum(gps);
   vector<double> ac = autoCorrelation(g);
   if (debug & 1)
     writePlotFile("gvac.gp", ac);
 
-  double sLen = findMaxBetween(ac, 8 * period / 10, 12 * period / 10);
+  double sLen = findMaxBetween(ac, 8 * cycleLength / 10, 12 * cycleLength / 10);
   if (verbose)
-    cout << "Cycle len from autocorrelation: " << sLen << endl;
+    cout << "Cycle length (from autocorrelation): " << sLen << endl;
 
   int iLen = sLen;
   // split video in parts of len sLen and average values
@@ -114,16 +114,21 @@ void analysis(const std::vector<ice::Image>& cv,
   if (debug & 1)
     writePlotFile("averagegv.gp", average);
 
-  double x0 = findMaxBetween(dAverage);
+  if (cycleStart <= 0) // no start frame given
+    {
+      // find black to white change in averaged cycle
+      cycleStart = findMaxBetween(dAverage);
+    }
+
   if (verbose)
-    cout << "coarse boundaries: " << x0 << "  + k * " << sLen << endl;
+    cout << "coarse boundaries: " << cycleStart << "  + k * " << sLen << endl;
 
   vector<double> gc = dt(g); // \delta g_i
   if (debug & 1)
     writePlotFile("gvdt.gp", gc);
 
   sb.clear();
-  double x = x0;
+  double x = cycleStart;
   while (x < nFrames)
     {
       // cout << "x: " << x << " +/- " << sLen*2/sequenceLength << endl;

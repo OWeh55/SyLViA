@@ -60,6 +60,9 @@ int calcPhases(const vector<ImageD>& img,
 
   decodeGrayCode(img, phase, mask, minlevel);
 
+  double phaseMin = numeric_limits<double>::max() ;
+  double phaseMax = - numeric_limits<double>::max() ;
+
   for (int y = 0; y < ySize; ++y)
     for (int x = 0; x < xSize; ++x)
       {
@@ -76,14 +79,20 @@ int calcPhases(const vector<ImageD>& img,
             if ((fic > 3 * M_PI / 2) && (fil == 0)) fih--; // fil=3
             if ((fic < M_PI / 2) && (fil == 3)) fih++; // fil=0
 
-            phase.setPixel(x, y, fih + (fic / (2 * M_PI)));
-            if ((s * s + c * c) < minlevel)
+            double ph =  fih + (fic / (2 * M_PI));
+            phase.setPixel(x, y, ph);
+            if ((s * s + c * c) >= minlevel)
+              {
+                if (ph < phaseMin) phaseMin = ph;
+                if (ph > phaseMax) phaseMax = ph;
+              }
+            else
               {
                 mask.setPixel(x, y, mask.getPixel(x, y) | 2);
               }
           }
       }
-  phase.adaptLimits();
+  phase.setLimits(phaseMin, phaseMax);
   if (debug & 8)
     {
       Show(OVERLAY, mask);

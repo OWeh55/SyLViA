@@ -19,11 +19,13 @@ using namespace std;
   opt: F, first, int, first, First frame to use, 0
   opt: L, last, int, last, Last frame to use, -1
   opt2: last = -1 for all frames
-  opt: p, period, int, period, Approximate cycle length (as hint for program), -1
+
+  opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
+  opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
 
   opt: t, threshold, Double, threshold, Threshold for detection, 2
 
-  opt: s, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
+  opt: S, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
   opt2: Meaning of characters
   opt2: s - sinus function
   opt2: c - sinus function
@@ -76,10 +78,10 @@ int main(int argc, char** argv)
         cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
 
       vector<double> sequenceBoundaries;
-      analysis(cv, fps, sequenceBoundaries, period);
+      analysis(cv, fps, sequenceBoundaries, cycleLength, cycleStart);
       if (verbose)
         {
-          cout << "period : " << period << endl;
+          cout << "cycle length : " << cycleLength << endl;
           int sequences = sequenceBoundaries.size() - 1;
           cout << "found " << sequences << " sequences" << endl;
           for (int i = 0; i < sequences; i++)

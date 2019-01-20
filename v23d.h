@@ -43,7 +43,8 @@ void analysis(const std::vector<ice::ColorImage>& cv,
 void analysis(const std::vector<ice::Image>& cv,
               int fps,
               vector<double>& sequenceBoundaries,
-              int& estimatedPeriod);
+              int& cycleLength,
+              int& cycleStart);
 
 // v2extract
 void extractPattern(const std::vector<ice::ColorImage>& cv,
