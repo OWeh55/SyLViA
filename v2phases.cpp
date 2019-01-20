@@ -83,8 +83,10 @@ int calcPhases(const vector<ImageD>& img,
             phase.setPixel(x, y, ph);
             if ((s * s + c * c) >= minlevel)
               {
-                if (ph < phaseMin) phaseMin = ph;
-                if (ph > phaseMax) phaseMax = ph;
+                if (ph < phaseMin)
+		  phaseMin = ph;
+                if (ph > phaseMax)
+		  phaseMax = ph;
               }
             else
               {
