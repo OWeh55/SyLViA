@@ -2,8 +2,9 @@
 
 // functions to calculate phase from captured images
 
+// plot wrapped phase and strip number
+//#define PDEBUG 99
 
-// #define PDEBUG 99 // plot wrapped phase and strip number
 using namespace std;
 
 int getGrayCode(int i)

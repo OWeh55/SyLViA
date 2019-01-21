@@ -54,7 +54,7 @@ all: $(MAIN) patterngen
 #	rm $*.cpp
 
 clean_files:
-	-rm -f *.o depend *~ *orig *.gp
+	-rm -f *.o depend *~ *orig
 
 clean:	clean_files dep
 
