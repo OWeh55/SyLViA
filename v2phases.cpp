@@ -2,6 +2,8 @@
 
 // functions to calculate phase from captured images
 
+
+// #define PDEBUG 99 // plot wrapped phase and strip number
 using namespace std;
 
 int getGrayCode(int i)
@@ -62,7 +64,10 @@ int calcPhases(const vector<ImageD>& img,
 
   double phaseMin = numeric_limits<double>::max() ;
   double phaseMax = - numeric_limits<double>::max() ;
-
+#if PDEBUG
+  vector<double> dphase(xSize, 0);
+  vector<double> dnr(xSize, 0);
+#endif
   for (int y = 0; y < ySize; ++y)
     for (int x = 0; x < xSize; ++x)
       {
@@ -70,23 +75,31 @@ int calcPhases(const vector<ImageD>& img,
           {
             double c = -img[0].getPixel(x, y);
             double s = img[1].getPixel(x, y);
-
-            double fic = atan2(c, s) + M_PI;
+            double fic =  atan2(c, s) + M_PI; // phase 0..2*pi
+            fic = fmod(fic + (1.75 * M_PI), 2 * M_PI); //
+#if PDEBUG
+            if (y == ySize / 2)
+              dphase[x] = fic * 10;
+#endif
             int snr = phase.getPixel(x, y);
-            int fih = snr / 4;
-            int fil = snr % 4;
+#if PDEBUG
+            if (y == ySize / 2)
+              dnr[x] = snr % 64;
+#endif
+            int fih = snr / 2;
+            int fil = snr % 2;
 
-            if ((fic > 3 * M_PI / 2) && (fil == 0)) fih--; // fil=3
-            if ((fic < M_PI / 2) && (fil == 3)) fih++; // fil=0
+            if ((fic > 3 * M_PI / 2) && (fil == 0)) fih--; // fil=1
+            if ((fic < M_PI / 2) && (fil == 1)) fih++; // fil=0
 
             double ph =  fih + (fic / (2 * M_PI));
             phase.setPixel(x, y, ph);
             if ((s * s + c * c) >= minlevel)
               {
                 if (ph < phaseMin)
-		  phaseMin = ph;
+                  phaseMin = ph;
                 if (ph > phaseMax)
-		  phaseMax = ph;
+                  phaseMax = ph;
               }
             else
               {
@@ -95,6 +108,10 @@ int calcPhases(const vector<ImageD>& img,
           }
       }
   phase.setLimits(phaseMin, phaseMax);
+#if PDEBUG
+  writePlotFile("phase.gp", dphase);
+  writePlotFile("number.gp", dnr);
+#endif
   if (debug & 8)
     {
       Show(OVERLAY, mask);
