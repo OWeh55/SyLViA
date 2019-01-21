@@ -32,6 +32,10 @@ using namespace std;
   opt2: 1,2,...,9 - gray code bit
   opt2: all pattern are projected as positive and negative
   opt2: Sequence is expected to start with black to white change
+  opt: x, xmin, int, Xmin, Window x minimum, 0
+  opt: X, xmax, int, Xmax, Window x maximum, -1
+  opt: y, ymin, int, Ymin, Window y minimum, 0
+  opt: Y, ymax, int, Ymax, Window y maximum, -1
   opt: D, debug, Int, debug, Debug flags (bitwise or), 0
   opt2:  1 - write gnuplot files in cycle detection
   opt2:  2 - debug boundary detection
@@ -60,9 +64,14 @@ int main(int argc, char** argv)
       if (debug != 0)
         verbose = true;
       // read video
+      if (Xmax <= 0)
+        Xmax = numeric_limits<int>::max();
+      if (Ymax <= 0)
+        Ymax = numeric_limits<int>::max();
+      Window readWindow(Xmin, Ymin, Xmax, Ymax);
       vector<Image> cv;
       int fps = 0;
-      readImages(fnb, cv, fps, first, last, 'g');
+      readImages(fnb, cv, fps, first, last, 'g', readWindow);
 
       nFrames = cv.size();
       if (nFrames == 0)

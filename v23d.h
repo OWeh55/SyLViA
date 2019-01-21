@@ -25,11 +25,13 @@ extern int debug;
 // v2file.cpp
 void readImages(const std::string& fn,
                 std::vector<ice::ColorImage>& ivector, int& fps,
-                int first = 0, int last = -1);
+                int first, int last);
+
 void readImages(const string& fn,
                 std::vector<Image>& ivector, int& fps,
-                int first = 0, int last = -1,
-                int colorMode = 'i');
+                int first, int last,
+                int colorMode,
+                const Window& window);
 
 void writePlotFile(const std::string& name, const std::vector<double>& v);
 void writePlotFile(const std::string& name, const std::vector<double>& v1, const std::vector<double>& v2);

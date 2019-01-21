@@ -9,7 +9,8 @@ void readImages(const string& fn,
                 vector<Image>& ivector,
                 int& fps,
                 int first, int last,
-                int colorMode)
+                int colorMode,
+                const Window& readWindow)
 {
   int xo, yo, mv;
 
@@ -21,6 +22,16 @@ void readImages(const string& fn,
       cout << "video " << fn << " with " << xo << "x" << yo ;
       cout << ", " << fps << " frames per second" << endl;
     }
+  Window window(readWindow);
+
+  if (window.p2.x >= xo)
+    window.p2.x = xo - 1;
+
+  if (window.p2.y >= yo)
+    window.p2.y = yo - 1;
+
+  int xSize = window.Width();
+  int ySize = window.Height();
 
   ColorImage in;
   in.create(xo, yo, mv);
@@ -45,37 +56,37 @@ void readImages(const string& fn,
     {
       frames++;
       Image g;
-      g.create(xo, yo, mv);
+      g.create(xSize, ySize, mv);
 
       WindowWalker ww(g);
-
+      IPoint shift = window.p1;
       switch (colorMode)
         {
         case 'r':
           for (ww.init(); !ww.ready(); ww.next())
             {
-              ColorValue cv = in.getPixelUnchecked(ww);
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
               g.setPixelUnchecked(ww, mv - cv.red);
             }
           break;
         case 'g':
           for (ww.init(); !ww.ready(); ww.next())
             {
-              ColorValue cv = in.getPixelUnchecked(ww);
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
               g.setPixelUnchecked(ww, mv - cv.green);
             }
           break;
         case 'b':
           for (ww.init(); !ww.ready(); ww.next())
             {
-              ColorValue cv = in.getPixelUnchecked(ww);
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
               g.setPixelUnchecked(ww, mv - cv.blue);
             }
           break;
         case 'i':
           for (ww.init(); !ww.ready(); ww.next())
             {
-              ColorValue cv = in.getPixelUnchecked(ww);
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
               g.setPixelUnchecked(ww, cv.getGray());
             }
           break;
