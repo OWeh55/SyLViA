@@ -6,6 +6,8 @@
 !*/
 # ignore generated files
 *.o
+# generated gnuplot files
+*.gp
 # ignore test data
 p1
 test.avi
