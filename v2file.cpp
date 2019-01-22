@@ -104,6 +104,117 @@ void readImages(const string& fn,
     Show(OFF, in);
 }
 
+void scanVideo(const string& fn,
+               vector<double>& gsum,
+               vector<double>& dgsum,
+               int& fps,
+               int first, int last,
+               int colorMode,
+               const Window& readWindow)
+{
+  int xo, yo, mv;
+
+  VideoFile input(fn);
+  input.getPara(xo, yo, mv, fps);
+
+  if (verbose)
+    {
+      cout << "video " << fn << " with " << xo << "x" << yo ;
+      cout << ", " << fps << " frames per second" << endl;
+    }
+  Window window(readWindow);
+
+  if (window.p2.x >= xo)
+    window.p2.x = xo - 1;
+
+  if (window.p2.y >= yo)
+    window.p2.y = yo - 1;
+
+  int xSize = window.Width();
+  int ySize = window.Height();
+
+  ColorImage in;
+  in.create(xo, yo, mv);
+  if (debug & 16)
+    Show(ON, in);
+
+  Image thisImage;
+  thisImage.create(xSize, ySize, mv);
+  Image lastImage;
+  lastImage.create(xSize, ySize, mv);
+
+  gsum.clear();
+  dgsum.clear();
+
+  while (input.FrameNumber() < first &&
+         input.read())
+    {
+      if (verbose)
+        {
+          if (input.FrameNumber() % 100 == 0)
+            cout << "skipping frame: " << input.FrameNumber() << endl;
+        }
+    }
+
+  int frames = 0;
+  if (last < 0)
+    last = numeric_limits<int>::max();
+  while (input.FrameNumber() < last &&
+         input.read(in))
+    {
+      frames++;
+
+      WindowWalker ww(thisImage);
+      IPoint shift = window.p1;
+      switch (colorMode)
+        {
+        case 'r':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, mv - cv.red);
+            }
+          break;
+        case 'g':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, mv - cv.green);
+            }
+          break;
+        case 'b':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, mv - cv.blue);
+            }
+          break;
+        case 'i':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, cv.getGray());
+            }
+          break;
+        }
+      // calculate gray value sum
+      // and absolute difference to previous image
+      double gSum = graySum(thisImage);
+      double dgSum = absGrayDiff(thisImage, lastImage);
+      gsum.push_back(gSum);
+      dgsum.push_back(dgSum);
+      CopyImg(thisImage, lastImage);
+      if (verbose)
+        if (frames % 100 == 0)
+          {
+            cout << "reading frame #" << input.FrameNumber();
+            cout << " (" << frames << " frames)" << endl;;
+          }
+    }
+  if (debug & 16)
+    Show(OFF, in);
+}
+
 void readImages(const string& fn,
                 vector<ColorImage>& ivector, int& fps,
                 int first, int last)

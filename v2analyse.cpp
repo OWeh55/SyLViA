@@ -40,17 +40,28 @@ void analysis(const std::vector<ice::Image>& cv,
   for (int i = 0; i < nFrames; i++)
     g[i] = graySum(cv[i]);
 
-  zeroPadding(g, 0, nFrames);
   if (debug & 1)
     writePlotFile("gvs.gp", g);
 
   vector<double> dg(nFrames - 1);
   for (int i = 0; i < nFrames - 1; i++)
     dg[i] = absGrayDiff(cv[i], cv[i + 1]);
-  zeroPadding(dg, 1, nFrames);
+
   if (debug & 1)
     writePlotFile("gvadiff.gp", dg);
 
+  zeroPadding(g, 0, nFrames);
+  zeroPadding(dg, 1, nFrames);
+  analysis(g, dg, fps, sb, cycleLength, cycleStart);
+}
+
+void analysis(const std::vector<double>& g,
+              const std::vector<double>& dg,
+              int fps,
+              vector<double>& sb,
+              int& cycleLength,
+              int& cycleStart)
+{
   vector<double> gps = powerSpectrum(g);
   if (debug & 1)
     writePlotFile("gvps.gp", gps);
@@ -134,21 +145,6 @@ void analysis(const std::vector<ice::Image>& cv,
       // cout << "x: " << x << " +/- " << sLen*2/sequenceLength << endl;
       double x_better = findMaxAround(gc, x, sLen * 2 / sequenceLength);
       sb.push_back(x_better - 0.5); // boundary is between this and previous image
-      x = x_better;
-      if (debug & 2)
-        {
-          int x1 = x - 1;
-          if (x1 < 0)
-            x1 = 0;
-          int x2 = x + 1;
-          if (x2 > nFrames - 1)
-            x2 = nFrames - 1;
-          for (int i = x1; i <= x2; i++)
-            Show(ON, cv[i], "Image " + to_string(i));
-          GetChar();
-          for (int i = x1; i <= x2; i++)
-            Show(OFF, cv[i]);
-        }
       x = x_better + sLen;
     }
   if (verbose)
