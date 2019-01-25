@@ -64,11 +64,16 @@ int main(int argc, char** argv)
       if (debug != 0)
         verbose = true;
       // read video
+      // prepare window:
+      // set to inf if not given by user
       if (Xmax <= 0)
         Xmax = numeric_limits<int>::max();
       if (Ymax <= 0)
         Ymax = numeric_limits<int>::max();
       Window readWindow(Xmin, Ymin, Xmax, Ymax);
+
+      // image vector: all (selected) frames in memory as
+      // gray value image
       vector<Image> cv;
       int fps = 0;
       readImages(fnb, cv, fps, first, last, 'g', readWindow);
@@ -86,6 +91,7 @@ int main(int argc, char** argv)
       if (verbose)
         cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
 
+      // analyse images to find sequences
       vector<double> sequenceBoundaries;
       analysis(cv, fps, sequenceBoundaries, cycleLength, cycleStart);
       if (verbose)
@@ -97,9 +103,11 @@ int main(int argc, char** argv)
             cout << sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
         }
 
+      // extract sequences: one image for every pattern
       vector<vector<ImageD>> extractedPattern;
       extractPattern(cv, sequenceBoundaries, extractedPattern);
 
+      // calculate per sequence: phase and mask
       vector<ImageD> phaseImages;
       vector<Image> maskImages;
       calcPhases(extractedPattern, phaseImages, maskImages, threshold);
