@@ -22,6 +22,7 @@ void readImages(const string& fn,
       cout << "video " << fn << " with " << xo << "x" << yo ;
       cout << ", " << fps << " frames per second" << endl;
     }
+
   Window window(readWindow);
 
   if (window.p2.x >= xo)
@@ -51,6 +52,7 @@ void readImages(const string& fn,
   int frames = 0;
   if (last < 0)
     last = numeric_limits<int>::max();
+
   while (input.FrameNumber() < last &&
          input.read(in))
     {
@@ -164,6 +166,9 @@ void scanVideo(const string& fn,
     {
       frames++;
 
+      //      cout << frames << " frames read" << endl;
+      //      cout << "FrameNumber: " << input.FrameNumber() << endl;
+
       WindowWalker ww(thisImage);
       IPoint shift = window.p1;
       switch (colorMode)
@@ -197,6 +202,9 @@ void scanVideo(const string& fn,
             }
           break;
         }
+      if (frames == 1) // first frame read
+        CopyImg(thisImage, lastImage);
+
       // calculate gray value sum
       // and absolute difference to previous image
       double gSum = graySum(thisImage);

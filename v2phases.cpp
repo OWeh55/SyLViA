@@ -24,6 +24,9 @@ int decodeGrayCode(const vector<ImageD>& seq,
       ungray[getGrayCode(i)] = i;
     }
 
+  int xSize = seq[0].xsize;
+  int ySize = seq[0].ysize;
+
   for (int y = 0; y < ySize; ++y)
     for (int x = 0; x < xSize; ++x)
       {
@@ -56,6 +59,9 @@ int calcPhases(const vector<ImageD>& img,
                Image& mask,
                double minlevel)
 {
+  int xSize = img[0].xsize;
+  int ySize = img[0].ysize;
+
   phase.create(xSize, ySize);
   phase.set(0.0);
   mask.create(xSize, ySize);

@@ -46,12 +46,6 @@ using namespace std;
   opt: h, help, usage, , Hilfe
 AppGen*/
 
-// globals for convenience
-// video
-int nFrames;
-int xSize;
-int ySize;
-
 // sequence of pattern
 int sequenceLength;
 
@@ -61,9 +55,14 @@ int main(int argc, char** argv)
   /*AppGen:MainEnd*/
   try
     {
+
+      int nFrames;
+      int xSize;
+      int ySize;
+
       if (debug != 0)
         verbose = true;
-      // read video
+
       // prepare window:
       // set to inf if not given by user
       if (Xmax <= 0)
@@ -72,6 +71,46 @@ int main(int argc, char** argv)
         Ymax = numeric_limits<int>::max();
       Window readWindow(Xmin, Ymin, Xmax, Ymax);
 
+      // prepare globals for sequence
+      sequenceLength = sequenceDescription.length() * 2 + 2;
+      if (verbose)
+        cout << "sequence: " << sequenceDescription
+             << "   (" << sequenceLength << " pattern) " << endl;
+
+      vector<double> gsum;
+      vector<double> dgsum;
+
+      int fps = 0;
+      scanVideo(fnb,
+                gsum, dgsum,
+                fps,
+                first, last, 'g', readWindow);
+
+      nFrames = gsum.size();
+      if (nFrames == 0)
+        throw IceException("readImages", "No frames read");
+
+      if (verbose)
+        cout << "read " << nFrames << " images" << endl;
+
+      //  cout << gsum.size() << " " << dgsum.size() << endl;
+      vector<double> sequenceBoundaries;
+      analysis(gsum, dgsum,
+               fps,
+               sequenceBoundaries,
+               cycleLength, cycleStart);
+
+      if (verbose)
+        {
+          cout << "cycle length : " << cycleLength << endl;
+          int sequences = sequenceBoundaries.size() - 1;
+          cout << "found " << sequences << " sequences" << endl;
+          for (int i = 0; i < sequences; i++)
+            cout << sequenceBoundaries[i] << " ... "
+                 << sequenceBoundaries[i + 1] << endl;
+        }
+
+#ifdef IN_MEMORY
       // image vector: all (selected) frames in memory as
       // gray value image
       vector<Image> cv;
@@ -89,7 +128,8 @@ int main(int argc, char** argv)
       // prepare globals for sequence
       sequenceLength = sequenceDescription.length() * 2 + 2;
       if (verbose)
-        cout << "sequence: " << sequenceDescription << "   (" << sequenceLength << " pattern) " << endl;
+        cout << "sequence: " << sequenceDescription
+             << "   (" << sequenceLength << " pattern) " << endl;
 
       // analyse images to find sequences
       vector<double> sequenceBoundaries;
@@ -100,7 +140,8 @@ int main(int argc, char** argv)
           int sequences = sequenceBoundaries.size() - 1;
           cout << "found " << sequences << " sequences" << endl;
           for (int i = 0; i < sequences; i++)
-            cout << sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
+            cout << sequenceBoundaries[i] << " ... "
+                 << sequenceBoundaries[i + 1] << endl;
         }
 
       // extract sequences: one image for every pattern
@@ -111,6 +152,8 @@ int main(int argc, char** argv)
       vector<ImageD> phaseImages;
       vector<Image> maskImages;
       calcPhases(extractedPattern, phaseImages, maskImages, threshold);
+#endif
+
     }
   catch (IceException& ex)
     {

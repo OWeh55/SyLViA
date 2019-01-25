@@ -36,6 +36,7 @@ void analysis(const std::vector<ice::Image>& cv,
               vector<double>& sb,
               int& cycleLength, int& cycleStart)
 {
+  int nFrames = cv.size();
   vector<double> g(nFrames);
   for (int i = 0; i < nFrames; i++)
     g[i] = graySum(cv[i]);
@@ -55,23 +56,39 @@ void analysis(const std::vector<ice::Image>& cv,
   analysis(g, dg, fps, sb, cycleLength, cycleStart);
 }
 
-void analysis(const std::vector<double>& g,
-              const std::vector<double>& dg,
+void analysis(const std::vector<double>& gp,
+              const std::vector<double>& dgp,
               int fps,
               vector<double>& sb,
               int& cycleLength,
               int& cycleStart)
 {
+  vector<double> g(gp);
+  vector<double> dg(dgp);
+
+  int nFrames = g.size();
+  if (dg.size() != nFrames)
+    throw IceException("analysis", "vectors have different sizes");
+
+  zeroPadding(g, 0, nFrames);
+  zeroPadding(dg, 0, nFrames);
+
   vector<double> gps = powerSpectrum(g);
   if (debug & 1)
     writePlotFile("gvps.gp", gps);
-  cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
+
+  if (sequenceLength <= 0)
+    throw IceException("analysis", "sequenceLength invalid");
+
+  if (verbose)
+    cout << "a priori max freq " <<  nFrames / sequenceLength / 2 << endl;
+
   // we apply a "high pass" to suppress slow changes
   // 0.1 Hz <-> 10 s <-> fps*10 Frames
   int hp = (double)nFrames / fps / 10;
   if (hp < 2)
     hp = 2;
-  cout << "Hochpass: " << hp << " (" << hp * 2 << ")" << endl;
+  //  cout << "Hochpass: " << hp << " (" << hp * 2 << ")" << endl;
   double gfMax = findMaxBetween(gps, 2 * hp, 2 * nFrames / sequenceLength / 2) / 2;
   if (verbose)
     {

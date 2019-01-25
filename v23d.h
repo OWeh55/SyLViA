@@ -8,7 +8,7 @@
 
 // globals for convenience
 // video
-extern int nFrames;
+//extern int nFrames;
 extern int xSize;
 extern int ySize;
 

@@ -13,11 +13,9 @@ vector<double> powerSpectrum(const vector<double>& g)
 {
   FourierTrafo ft(g.size());
   ft.setInput(g);
-
   vector<double> re(g.size());
   vector<double> im(g.size());
   ft.getResult(re, im);
-
   vector<double> ps(g.size() / 2);
 
   // to power spectrum

@@ -36,6 +36,8 @@ void getImage(const std::vector<ice::Image>& cv,
 void getPattern(const std::vector<ice::Image>& cv,
                 double idx1, double idx2, vector<ImageD>& sp)
 {
+  int xSize = cv[0].xsize;
+  int ySize = cv[0].ysize;
   double dIdx = (idx2 - idx1) / sequenceLength;
   ImageD pos;
   pos.create(xSize, ySize);
