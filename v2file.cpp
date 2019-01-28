@@ -273,6 +273,8 @@ void readImages(const string& fn,
 
 void readImage(VideoFile& v, int frameNr, ColorImage& img)
 {
+  if (frameNr < v.FrameNumber())
+    throw IceException("readImage", "frame index is falling");
   while (v.FrameNumber() < frameNr)
     v.read();
   v.read(img);
@@ -328,9 +330,9 @@ void readSequence(VideoFile& v,
   WindowWalker w(cImg);
   for (w.init(); !w.ready(); w.next())
     {
-      cImg.setPixel(w, ColorValue(r.getPixel(w) / nPattern / 2,
-                                  g.getPixel(w) / nPattern / 2,
-                                  b.getPixel(w) / nPattern) / 2);
+      cImg.setPixel(w, ColorValue(r.getPixel(w),
+                                  g.getPixel(w),
+                                  b.getPixel(w)) / nPattern / 2);
     }
 }
 
