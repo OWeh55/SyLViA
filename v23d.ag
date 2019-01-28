@@ -57,8 +57,6 @@ int main(int argc, char** argv)
     {
 
       int nFrames;
-      int xSize;
-      int ySize;
 
       if (debug != 0)
         verbose = true;
@@ -100,60 +98,35 @@ int main(int argc, char** argv)
                sequenceBoundaries,
                cycleLength, cycleStart);
 
+      int nSequences = sequenceBoundaries.size() - 1;
       if (verbose)
         {
           cout << "cycle length : " << cycleLength << endl;
-          int sequences = sequenceBoundaries.size() - 1;
-          cout << "found " << sequences << " sequences" << endl;
-          for (int i = 0; i < sequences; i++)
+
+          cout << "found " << nSequences << " sequences" << endl;
+          for (int i = 0; i < nSequences; i++)
             cout << sequenceBoundaries[i] << " ... "
                  << sequenceBoundaries[i + 1] << endl;
         }
 
-#ifdef IN_MEMORY
-      // image vector: all (selected) frames in memory as
-      // gray value image
-      vector<Image> cv;
-      int fps = 0;
-      readImages(fnb, cv, fps, first, last, 'g', readWindow);
+      if (nSequences == 0)
+        throw IceException("analysis", "No sequences found");
 
-      nFrames = cv.size();
-      if (nFrames == 0)
-        throw IceException("readImages", "No frames read");
-      if (verbose)
-        cout << "read " << nFrames << " images" << endl;
-      xSize = cv[0].xsize;
-      ySize = cv[0].ysize;
-
-      // prepare globals for sequence
-      sequenceLength = sequenceDescription.length() * 2 + 2;
-      if (verbose)
-        cout << "sequence: " << sequenceDescription
-             << "   (" << sequenceLength << " pattern) " << endl;
-
-      // analyse images to find sequences
-      vector<double> sequenceBoundaries;
-      analysis(cv, fps, sequenceBoundaries, cycleLength, cycleStart);
-      if (verbose)
+      // extract all sequences
+      VideoFile v(fnb);
+      for (int i = 0; i < sequenceBoundaries.size() - 1; i++)
         {
-          cout << "cycle length : " << cycleLength << endl;
-          int sequences = sequenceBoundaries.size() - 1;
-          cout << "found " << sequences << " sequences" << endl;
-          for (int i = 0; i < sequences; i++)
-            cout << sequenceBoundaries[i] << " ... "
-                 << sequenceBoundaries[i + 1] << endl;
+          if (verbose)
+            cout << "extracting sequence " <<  sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
+          vector<ImageD> seq;
+          ColorImage cImg;
+          readSequence(v,
+                       sequenceBoundaries[i], sequenceBoundaries[i + 1],
+                       'g',  // color mode
+                       seq, cImg);
+          Show(ON, cImg);
+          GetChar();
         }
-
-      // extract sequences: one image for every pattern
-      vector<vector<ImageD>> extractedPattern;
-      extractPattern(cv, sequenceBoundaries, extractedPattern);
-
-      // calculate per sequence: phase and mask
-      vector<ImageD> phaseImages;
-      vector<Image> maskImages;
-      calcPhases(extractedPattern, phaseImages, maskImages, threshold);
-#endif
-
     }
   catch (IceException& ex)
     {

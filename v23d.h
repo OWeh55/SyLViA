@@ -41,6 +41,12 @@ void scanVideo(const string& fn,
                int colorMode,
                const Window& readWindow);
 
+void readSequence(VideoFile& v,
+                  double leftBoundary, double rightBoundary,
+                  int colorMode,
+                  vector<ImageD>& seq,
+                  ColorImage& cImg);
+
 void writePlotFile(const std::string& name, const std::vector<double>& v);
 void writePlotFile(const std::string& name, const std::vector<double>& v1, const std::vector<double>& v2);
 

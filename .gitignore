@@ -10,6 +10,7 @@
 *.gp
 # ignore test data
 p1
+somikon
 test.avi
 # ignore backups and temporary files
 *~

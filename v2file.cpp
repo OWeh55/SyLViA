@@ -271,6 +271,69 @@ void readImages(const string& fn,
     }
 }
 
+void readImage(VideoFile& v, int frameNr, ColorImage& img)
+{
+  while (v.FrameNumber() < frameNr)
+    v.read();
+  v.read(img);
+}
+
+void readSequence(VideoFile& v,
+                  double leftBoundary, double rightBoundary,
+                  int colorMode,
+                  vector<ImageD>& seq,
+                  ColorImage& cImg)
+{
+  int xs, ys, mv, fps;
+  v.getPara(xs, ys, mv, fps);
+
+  double patternLength = (rightBoundary - leftBoundary) / sequenceLength;
+  leftBoundary += patternLength; // skip white pattern
+  seq.resize(sequenceDescription.size());
+
+  ImageD r, g, b;
+  r.create(xs, ys);
+  r.set(0);
+  g.create(xs, ys);
+  g.set(0);
+  b.create(xs, ys);
+  b.set(0);
+  int nPattern = sequenceDescription.size();
+
+  for (int i = 0; i < nPattern; i++) // all pattern pairs (pos+neg)
+    {
+      int posIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength / 2);
+      int negIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength + patternLength / 2);
+      ColorImage pos;
+      pos.create(xs, ys, mv);
+      readImage(v, posIdx, pos);
+      ColorImage neg;
+      neg.create(xs, ys, mv);
+      readImage(v, negIdx, neg);
+      seq[i].create(xs, ys);
+      WindowWalker w(seq[i]);
+      for (w.init(); !w.ready(); w.next())
+        {
+          ColorValue pColor = pos.getPixel(w);
+          int pval = pColor.getGray();
+          ColorValue nColor = neg.getPixel(w);
+          int nval = nColor.getGray();
+          seq[i].setPixel(w, pval - nval);
+          r.setPixel(w, r.getPixel(w) + pColor.red + nColor.red);
+          g.setPixel(w, g.getPixel(w) + pColor.green + nColor.green);
+          b.setPixel(w, b.getPixel(w) + pColor.blue + nColor.blue);
+        }
+    }
+  cImg.create(xs, ys, mv);
+  WindowWalker w(cImg);
+  for (w.init(); !w.ready(); w.next())
+    {
+      cImg.setPixel(w, ColorValue(r.getPixel(w) / nPattern / 2,
+                                  g.getPixel(w) / nPattern / 2,
+                                  b.getPixel(w) / nPattern) / 2);
+    }
+}
+
 void writePlotFile(const string& name, const vector<double>& v)
 {
   ofstream os(name);
@@ -280,7 +343,9 @@ void writePlotFile(const string& name, const vector<double>& v)
     os << i << " " << v[i] << endl;
 }
 
-void writePlotFile(const string& name, const vector<double>& v1, const vector<double>& v2)
+void writePlotFile(const string& name,
+                   const vector<double>& v1,
+                   const vector<double>& v2)
 {
   ofstream os(name);
   if (verbose)
