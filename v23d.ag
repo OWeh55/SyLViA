@@ -160,9 +160,13 @@ int main(int argc, char** argv)
           calcPhases(seq, phase, mask, thresholdg, thresholdp);
           if (writeResult)
             {
+              string iString(to_string(i));
+              while (iString.size() < 3)
+                iString = "0" + iString;
+
               FileName texture;
               texture.setPath(resDir.getFullName());
-              texture.setName(outFile + "_" + to_string(i) + "_texture");
+              texture.setName(outFile + "_" + iString + "_texture");
               texture.setExtension("pnm");
               cImg.write(texture.getFullName());
               if (verbose)
@@ -170,7 +174,7 @@ int main(int argc, char** argv)
 
               FileName maskN;
               maskN.setPath(resDir.getFullName());
-              maskN.setName(outFile + "_" + to_string(i) + "_mask");
+              maskN.setName(outFile + "_" + iString + "_mask");
               maskN.setExtension("pgm");
               binImg(mask);
               mask.write(maskN.getFullName());
@@ -179,7 +183,7 @@ int main(int argc, char** argv)
 
               FileName phaseN;
               phaseN.setPath(resDir.getFullName());
-              phaseN.setName(outFile + "_" + to_string(i) + "_phase");
+              phaseN.setName(outFile + "_" + iString + "_phase");
               phaseN.setExtension("pgm");
               Image iPhase;
               iPhase.create(phase.xsize, phase.ysize, 65000);
