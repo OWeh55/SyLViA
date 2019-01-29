@@ -124,6 +124,7 @@ int main(int argc, char** argv)
           readSequence(v,
                        sequenceBoundaries[i], sequenceBoundaries[i + 1],
                        'g',  // color mode
+                       readWindow,
                        seq, cImg);
           /*
                 Show(ON, cImg);

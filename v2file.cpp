@@ -134,11 +134,22 @@ void readImage(VideoFile& v, int frameNr, ColorImage& img)
 void readSequence(VideoFile& v,
                   double leftBoundary, double rightBoundary,
                   int colorMode,
+                  const Window& readWindow,
                   vector<ImageD>& seq,
                   ColorImage& cImg)
 {
-  int xs, ys, mv, fps;
-  v.getPara(xs, ys, mv, fps);
+  int xo, yo, mv, fps;
+  v.getPara(xo, yo, mv, fps);
+
+  Window window(readWindow);
+  if (window.p2.x >= xo)
+    window.p2.x = xo - 1;
+
+  if (window.p2.y >= yo)
+    window.p2.y = yo - 1;
+
+  int xs = window.Width();
+  int ys = window.Height();
 
   double patternLength = (rightBoundary - leftBoundary) / sequenceLength;
   leftBoundary += patternLength; // skip white pattern
@@ -158,18 +169,19 @@ void readSequence(VideoFile& v,
       int posIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength / 2);
       int negIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength + patternLength / 2);
       ColorImage pos;
-      pos.create(xs, ys, mv);
+      pos.create(xo, yo, mv);
       readImage(v, posIdx, pos);
       ColorImage neg;
-      neg.create(xs, ys, mv);
+      neg.create(xo, yo, mv);
       readImage(v, negIdx, neg);
       seq[i].create(xs, ys);
       WindowWalker w(seq[i]);
       for (w.init(); !w.ready(); w.next())
         {
-          ColorValue pColor = pos.getPixel(w);
+          IPoint original = w + window.p1;
+          ColorValue pColor = pos.getPixel(original);
           int pval = pColor.getGray();
-          ColorValue nColor = neg.getPixel(w);
+          ColorValue nColor = neg.getPixel(original);
           int nval = nColor.getGray();
           seq[i].setPixel(w, nval - pval);
           r.setPixel(w, r.getPixel(w) + pColor.red + nColor.red);

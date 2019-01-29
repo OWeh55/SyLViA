@@ -34,6 +34,7 @@ void scanVideo(const string& fn,
 void readSequence(VideoFile& v,
                   double leftBoundary, double rightBoundary,
                   int colorMode,
+                  const Window& readWindow,
                   vector<ImageD>& seq,
                   ColorImage& cImg);
 
