@@ -1,5 +1,5 @@
 MAIN=v23d
-OBJECTS=$(MAIN).o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o run.o
+OBJECTS=$(MAIN).o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o
 
 ifndef ICEDIR
 ICEDIR=/home/noo/ice

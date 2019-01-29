@@ -104,6 +104,7 @@ void calcPhases(const vector<ImageD>& img,
             if ((fic < M_PI / 2) && (fil == 1)) fih++; // fil=0
 
             double ph =  fih + (fic / (2 * M_PI));
+            ph += 1; // make sure phase is positive
             phase.setPixel(x, y, ph);
             if ((s * s + c * c) >= minlevel2)
               {

@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include <image.h>
+#include "FileName.h"
 
 #include "v23d.h"
 
@@ -14,11 +15,18 @@ using namespace std;
 
 /*AppGen
   prog: analyse video from coded light
-  para: filename, optional, string, fnb, Video filename, ""
+  para: filename, optional, string, fn, Video filename, ""
 
   opt: F, first, int, first, First frame to use, 0
   opt: L, last, int, last, Last frame to use, -1
   opt2: last = -1 for all frames
+
+  opt: x, xmin, int, Xmin, Window x minimum, 0
+  opt: X, xmax, int, Xmax, Window x maximum, -1
+  opt: y, ymin, int, Ymin, Window y minimum, 0
+  opt: Y, ymax, int, Ymax, Window y maximum, -1
+
+  opt: o, output, string, outFile, Name of output files, ""
 
   opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
   opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
@@ -33,16 +41,14 @@ using namespace std;
   opt2: 1,2,...,9 - gray code bit
   opt2: all pattern are projected as positive and negative
   opt2: Sequence is expected to start with black to white change
-  opt: x, xmin, int, Xmin, Window x minimum, 0
-  opt: X, xmax, int, Xmax, Window x maximum, -1
-  opt: y, ymin, int, Ymin, Window y minimum, 0
-  opt: Y, ymax, int, Ymax, Window y maximum, -1
+
   opt: D, debug, Int, debug, Debug flags (bitwise or), 0
   opt2:  1 - write gnuplot files in cycle detection
   opt2:  2 - debug boundary detection
   opt2:  4 - debug pattern extraction
   opt2:  8 - debug phase detection
   opt2: 16 - debug read video
+
   opt: v, verbose, Void, verbose, Be verbose, false
   opt: h, help, usage, , Hilfe
 AppGen*/
@@ -56,9 +62,6 @@ int main(int argc, char** argv)
   /*AppGen:MainEnd*/
   try
     {
-
-      int nFrames;
-
       if (debug != 0)
         verbose = true;
 
@@ -76,11 +79,25 @@ int main(int argc, char** argv)
         cout << "sequence: " << sequenceDescription
              << "   (" << sequenceLength << " pattern) " << endl;
 
+      FileName filename(fn);
+
+      bool writeResult = false;
+      if (!outFile.empty())
+        {
+          FileName of(outFile); // remove all but filename
+          outFile = of.getName();
+          writeResult = true;
+        }
+
+      if (debug == 0 && !writeResult)
+        throw IceException("v23d", "no result and no debug");
+
       vector<double> gsum;
       vector<double> dgsum;
+      int nFrames;
 
       int fps = 0;
-      scanVideo(fnb,
+      scanVideo(filename.getFullName(),
                 gsum, dgsum,
                 fps,
                 first, last, 'g', readWindow);
@@ -113,8 +130,16 @@ int main(int argc, char** argv)
       if (nSequences == 0)
         throw IceException("analysis", "No sequences found");
 
+      FileName resDir(filename);
+      resDir.setExtension("");
+
+      if (writeResult)
+        {
+          system(("mkdir -p " + resDir.getFullName()).c_str());
+        }
+
       // extract all sequences
-      VideoFile v(fnb);
+      VideoFile v(filename.getFullName());
       for (int i = 0; i < sequenceBoundaries.size() - 1; i++)
         {
           if (verbose)
@@ -133,6 +158,43 @@ int main(int argc, char** argv)
           ImageD phase;
           Image mask;
           calcPhases(seq, phase, mask, thresholdg, thresholdp);
+          if (writeResult)
+            {
+              FileName texture;
+              texture.setPath(resDir.getFullName());
+              texture.setName(outFile + "_" + to_string(i) + "_texture");
+              texture.setExtension("pnm");
+              cImg.write(texture.getFullName());
+              if (verbose)
+                cout << "wrote " << texture.getFullName() << endl;
+
+              FileName maskN;
+              maskN.setPath(resDir.getFullName());
+              maskN.setName(outFile + "_" + to_string(i) + "_mask");
+              maskN.setExtension("pgm");
+              binImg(mask);
+              mask.write(maskN.getFullName());
+              if (verbose)
+                cout << "wrote " << maskN.getFullName() << endl;
+
+              FileName phaseN;
+              phaseN.setPath(resDir.getFullName());
+              phaseN.setName(outFile + "_" + to_string(i) + "_phase");
+              phaseN.setExtension("pgm");
+              Image iPhase;
+              iPhase.create(phase.xsize, phase.ysize, 65000);
+              WindowWalker w(phase);
+              phase.adaptLimits();
+              for (w.init(); !w.ready(); w.next())
+                {
+                  iPhase.setPixel(w, phase.getPixel(w) * 64);
+                }
+
+              iPhase.write(phaseN.getFullName());
+              if (verbose)
+                cout << "wrote " << phaseN.getFullName() << endl;
+
+            }
           /*
           Show(GRAY,phase);
           Show(OVERLAY,mask);
