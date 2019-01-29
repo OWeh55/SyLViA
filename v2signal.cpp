@@ -62,16 +62,16 @@ vector<double> autoCorrelationFromPowerSpectrum(const vector<double>& ps)
 
 void zeroPadding(vector<double>& v, int before, int after)
 {
-  // we add the additional samples at the end
-  // since we use the cyclic model, it is not important, that padding
-  // happens at both ends
   // we use the mean value as "zero"
   int oldSize = v.size();
   double sum = 0;
   for (double d : v)
     sum += d;
+  // new vector initialized with mean value
   vector<double> result(before + oldSize + after, sum / oldSize);
+  // fill in original values
   for (int i = 0; i < oldSize; i++)
     result[i + before] = v[i];
+  // substitute original with padded vector
   v = result;
 }

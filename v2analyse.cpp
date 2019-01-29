@@ -31,31 +31,6 @@ double graySum(const Image& img)
   return double(gsum) / n;
 }
 
-void analysis(const std::vector<ice::Image>& cv,
-              int fps,
-              vector<double>& sb,
-              int& cycleLength, int& cycleStart)
-{
-  int nFrames = cv.size();
-  vector<double> g(nFrames);
-  for (int i = 0; i < nFrames; i++)
-    g[i] = graySum(cv[i]);
-
-  if (debug & 1)
-    writePlotFile("gvs.gp", g);
-
-  vector<double> dg(nFrames - 1);
-  for (int i = 0; i < nFrames - 1; i++)
-    dg[i] = absGrayDiff(cv[i], cv[i + 1]);
-
-  if (debug & 1)
-    writePlotFile("gvadiff.gp", dg);
-
-  zeroPadding(g, 0, nFrames);
-  zeroPadding(dg, 1, nFrames);
-  analysis(g, dg, fps, sb, cycleLength, cycleStart);
-}
-
 void analysis(const std::vector<double>& gp,
               const std::vector<double>& dgp,
               int fps,
