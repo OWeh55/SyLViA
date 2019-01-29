@@ -320,12 +320,19 @@ void readSequence(VideoFile& v,
           int pval = pColor.getGray();
           ColorValue nColor = neg.getPixel(w);
           int nval = nColor.getGray();
-          seq[i].setPixel(w, pval - nval);
+          seq[i].setPixel(w, nval - pval);
           r.setPixel(w, r.getPixel(w) + pColor.red + nColor.red);
           g.setPixel(w, g.getPixel(w) + pColor.green + nColor.green);
           b.setPixel(w, b.getPixel(w) + pColor.blue + nColor.blue);
         }
+      seq[i].adaptLimits();
+      /*
+      Show(GRAY,seq[i],"pattern " + to_string(i));
+      GetChar();
+      Show(OFF,seq[i]);
+      */
     }
+
   cImg.create(xs, ys, mv);
   WindowWalker w(cImg);
   for (w.init(); !w.ready(); w.next())

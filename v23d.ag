@@ -23,7 +23,8 @@ using namespace std;
   opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
   opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
 
-  opt: t, threshold, Double, threshold, Threshold for detection, 2
+  opt: T, threshold, Double, thresholdg, Threshold for graycode detection, 5
+  opt: t, threshold, Double, thresholdp, Threshold for phase detection, 1
 
   opt: S, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
   opt2: Meaning of characters
@@ -124,8 +125,18 @@ int main(int argc, char** argv)
                        sequenceBoundaries[i], sequenceBoundaries[i + 1],
                        'g',  // color mode
                        seq, cImg);
-          Show(ON, cImg);
+          /*
+                Show(ON, cImg);
+                GetChar();
+          */
+          ImageD phase;
+          Image mask;
+          calcPhases(seq, phase, mask, thresholdg, thresholdp);
+          /*
+          Show(GRAY,phase);
+          Show(OVERLAY,mask);
           GetChar();
+          */
         }
     }
   catch (IceException& ex)

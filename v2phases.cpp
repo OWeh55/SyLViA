@@ -15,7 +15,7 @@ int getGrayCode(int i)
 int decodeGrayCode(const vector<ImageD>& seq,
                    ImageD& phase,
                    Image& mask,
-                   double minlevel = 2)
+                   double minlevel)
 {
   // create decoder table
   int ungray[512];
@@ -30,20 +30,21 @@ int decodeGrayCode(const vector<ImageD>& seq,
   for (int y = 0; y < ySize; ++y)
     for (int x = 0; x < xSize; ++x)
       {
-        int gc = 0;
+        int grayCodeValue = 0;
         int bit = 1; // LSB first
-        bool good = true;
+        int nError = 0;
 
-        for (int i = 2; i < seq.size() && good; i += 1, bit <<= 1)
+        for (int i = 2; i < seq.size(); i += 1, bit <<= 1)
           {
             double difg = seq[i].getPixel(x, y);
-            good = abs(difg) >= minlevel;
-            gc += difg > 0 ? bit : 0;
+            if (abs(difg) < minlevel)
+              nError++;
+            grayCodeValue += difg > 0 ? bit : 0;
           }
-
-        if (good) // Graycode valid
+        // we accept one uncertain bit assuming change between two values
+        if (nError < 2) // Graycode valid ?
           {
-            phase.setPixel(x, y, ungray[gc]);
+            phase.setPixel(x, y, ungray[grayCodeValue]);
           }
         else
           {
@@ -54,10 +55,11 @@ int decodeGrayCode(const vector<ImageD>& seq,
   return 0;
 }
 
-int calcPhases(const vector<ImageD>& img,
-               ImageD& phase,
-               Image& mask,
-               double minlevel)
+void calcPhases(const vector<ImageD>& img,
+                ImageD& phase,
+                Image& mask,
+                double minlevelg,
+                double minlevelp)
 {
   int xSize = img[0].xsize;
   int ySize = img[0].ysize;
@@ -67,7 +69,9 @@ int calcPhases(const vector<ImageD>& img,
   mask.create(xSize, ySize);
   mask.set(0); // all valid
 
-  decodeGrayCode(img, phase, mask, minlevel);
+  decodeGrayCode(img, phase, mask, minlevelg);
+
+  double minlevel2 = minlevelp * minlevelp;
 
   double phaseMin = numeric_limits<double>::max() ;
   double phaseMax = - numeric_limits<double>::max() ;
@@ -101,7 +105,7 @@ int calcPhases(const vector<ImageD>& img,
 
             double ph =  fih + (fic / (2 * M_PI));
             phase.setPixel(x, y, ph);
-            if ((s * s + c * c) >= minlevel)
+            if ((s * s + c * c) >= minlevel2)
               {
                 if (ph < phaseMin)
                   phaseMin = ph;
@@ -127,17 +131,4 @@ int calcPhases(const vector<ImageD>& img,
       Show(OFF, mask);
       Show(OFF, phase);
     }
-  return 0;
-}
-
-void calcPhases(const std::vector<std::vector<ImageD>>& extractedPattern,
-                std::vector<ImageD>& phaseImages,
-                std::vector<Image>& maskImages,
-                double minlevel)
-{
-  int nSequences = extractedPattern.size();
-  phaseImages.resize(nSequences);
-  maskImages.resize(nSequences);
-  for (int i = 0; i < nSequences; i++)
-    calcPhases(extractedPattern[i], phaseImages[i], maskImages[i], minlevel);
 }

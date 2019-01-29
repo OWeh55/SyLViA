@@ -79,10 +79,10 @@ void extractPattern(const std::vector<ice::Image>& cv,
                     std::vector<std::vector<ImageD>>& extractedPattern);
 
 // v2phases
-void calcPhases(const std::vector<std::vector<ImageD>>& extractedPattern,
-                std::vector<ImageD>& phaseImages,
-                std::vector<Image>& maskImages,
-                double minlevel);
+void calcPhases(const vector<ImageD>& img,
+                ImageD& phase,
+                Image& mask,
+                double minlevelg, double minlevelp);
 
 // v2signal
 std::vector<double> powerSpectrum(const std::vector<double>& g);
