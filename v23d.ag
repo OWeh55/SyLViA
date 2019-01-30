@@ -152,8 +152,8 @@ int main(int argc, char** argv)
                        readWindow,
                        seq, cImg);
           /*
-                Show(ON, cImg);
-                GetChar();
+          Show(ON, cImg);
+          GetChar();
           */
           ImageD phase;
           Image mask;
@@ -185,12 +185,14 @@ int main(int argc, char** argv)
                   // we expect phase values > 0
                   // or roundInt(phase * phaseResolution) >= 1
                   int intPhase = RoundInt(phase.getPixel(w) * phaseResolution);
-                  if (intPhase > 0xffff)
-                    throw "phase value exceeds word (reduce phaseResolution)";
-                  if (intPhase < 1)
-                    throw "unexpected phase < 1";
                   if (mask.getPixel(w) == 0) // phase valid
-                    iPhase.setPixel(w, intPhase);
+                    {
+                      if (intPhase > 0xffff)
+                        throw IceException("phase", "value exceeds word (reduce phaseResolution)");
+                      if (intPhase < 1)
+                        throw IceException("phase", "unexpected value < 1 : " + to_string(intPhase));
+                      iPhase.setPixel(w, intPhase);
+                    }
                   else
                     iPhase.setPixel(w, 0);
                 }
@@ -209,7 +211,7 @@ int main(int argc, char** argv)
     }
   catch (IceException& ex)
     {
-      cerr << "exception (ICE): " << ex.what() << endl;
+      cerr << "exception: " << ex.what() << endl;
     }
   catch (const char* msg)
     {
