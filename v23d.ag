@@ -27,7 +27,7 @@ using namespace std;
   opt: Y, ymax, int, Ymax, Window y maximum, -1
 
   opt: o, output, string, outFile, Name of output files, ""
-
+  opt: p, phaseresolution, int, phaseResolution, Subdivision of phase, 32
   opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
   opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
 
@@ -172,26 +172,27 @@ int main(int argc, char** argv)
               if (verbose)
                 cout << "wrote " << texture.getFullName() << endl;
 
-              FileName maskN;
-              maskN.setPath(resDir.getFullName());
-              maskN.setName(outFile + "_" + iString + "_mask");
-              maskN.setExtension("pgm");
-              binImg(mask);
-              mask.write(maskN.getFullName());
-              if (verbose)
-                cout << "wrote " << maskN.getFullName() << endl;
-
               FileName phaseN;
               phaseN.setPath(resDir.getFullName());
               phaseN.setName(outFile + "_" + iString + "_phase");
               phaseN.setExtension("pgm");
               Image iPhase;
-              iPhase.create(phase.xsize, phase.ysize, 65000);
+              iPhase.create(phase.xsize, phase.ysize, 0xffff);
               WindowWalker w(phase);
               phase.adaptLimits();
               for (w.init(); !w.ready(); w.next())
                 {
-                  iPhase.setPixel(w, phase.getPixel(w) * 64);
+                  // we expect phase values > 0
+                  // or roundInt(phase * phaseResolution) >= 1
+                  int intPhase = RoundInt(phase.getPixel(w) * phaseResolution);
+                  if (intPhase > 0xffff)
+                    throw "phase value exceeds word (reduce phaseResolution)";
+                  if (intPhase < 1)
+                    throw "unexpected phase < 1";
+                  if (mask.getPixel(w) == 0) // phase valid
+                    iPhase.setPixel(w, intPhase);
+                  else
+                    iPhase.setPixel(w, 0);
                 }
 
               iPhase.write(phaseN.getFullName());
