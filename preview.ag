@@ -9,7 +9,8 @@
   para: filename, required, string, filename, Phase filename, ""
 
   opt: c, calib, string, calibFile, Use file for calibration, ""
-
+  opt: l, lowerlimit, double, lowerLimit, Lower limit, -9999
+  opt: L, upperlimit, double, upperLimit, Upper limit, 9999
   opt: v, verbose, Void, verbose, Be verbose, false
   opt: h, help, usage, , Hilfe
 AppGen*/
@@ -52,7 +53,13 @@ int main(int argc, char** argv)
           rPhase.setPixel(w, p);
         }
       rPhase.adaptLimits();
-
+      double min = rPhase.minValue();
+      double max = rPhase.maxValue();
+      if (lowerLimit != -9999)
+        min = lowerLimit;
+      if (upperLimit != 9999)
+        max = upperLimit;
+      rPhase.setLimits(min, max);
       GetChar();
       Show(OFF, rPhase);
     }
