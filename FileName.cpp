@@ -92,7 +92,7 @@ FileName::FileName(const std::string& path,
 std::string FileName::getFullName() const
 {
   std::string res = getPath();
-  if (res != "/")
+  if (res != "/" && !res.empty())
     res += '/';
   res += name;
   if (!extension.empty())
