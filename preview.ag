@@ -1,0 +1,68 @@
+/*AppGen:Global*/
+#include <string>
+#include <iostream>
+
+#include <image.h>
+
+/*AppGen
+  prog: preview phase from coded light
+  para: filename, required, string, filename, Phase filename, ""
+
+  opt: c, calib, string, calibFile, Use file for calibration, ""
+
+  opt: v, verbose, Void, verbose, Be verbose, false
+  opt: h, help, usage, , Hilfe
+AppGen*/
+
+/*AppGen:Main*/
+int main(int argc, char** argv)
+{
+  /*AppGen:MainEnd*/
+  try
+    {
+      Image phase;
+      if (!calibFile.empty())
+        phase.read(calibFile);
+      else
+        phase.read(filename);
+
+      Polynom2d1o planeFunction;
+      planeFunction.FitInit();
+      WindowWalker w(phase);
+      for (w.init(); !w.ready(); w.next())
+        {
+          int p = phase.getPixel(w);
+          if (p > 0)
+            planeFunction.FitVal(w.x, w.y, p);
+        }
+      planeFunction.FitFinish();
+      if (!calibFile.empty())
+        phase.read(filename);
+      ImageD rPhase;
+      rPhase.create(phase);
+      rPhase.set(0);
+      Show(GRAY, rPhase);
+      for (w.init(); !w.ready(); w.next())
+        {
+          double p = phase.getPixel(w);
+          if (p > 0)
+            {
+              p -= planeFunction(w.x, w.y);
+            }
+          rPhase.setPixel(w, p);
+        }
+      rPhase.adaptLimits();
+
+      GetChar();
+      Show(OFF, rPhase);
+    }
+  catch (IceException& ex)
+    {
+      cerr << "exception (ICE): " << ex.what() << endl;
+    }
+  catch (const char* msg)
+    {
+      cerr << "exception (char*): " << msg << endl;
+    }
+  return 0;
+}
