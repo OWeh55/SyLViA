@@ -58,6 +58,8 @@ clean_files:
 
 clean:	clean_files dep
 
+all: $(MAIN) preview
+
 dep:
 	-rm depend 
 	touch depend
