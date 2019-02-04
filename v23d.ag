@@ -26,7 +26,8 @@ using namespace std;
   opt: y, ymin, int, Ymin, Window y minimum, 0
   opt: Y, ymax, int, Ymax, Window y maximum, -1
 
-  opt: o, output, string, outFile, Name of output files, ""
+  opt: o, output, string, outFile, Name of output files, "v23d"
+  opt2:  use -o- for no output
   opt: p, phaseresolution, int, phaseResolution, Subdivision of phase, 32
   opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
   opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
@@ -84,9 +85,12 @@ int main(int argc, char** argv)
       bool writeResult = false;
       if (!outFile.empty())
         {
-          FileName of(outFile); // remove all but filename
-          outFile = of.getName();
-          writeResult = true;
+          if (outFile != "-")
+            {
+              FileName of(outFile); // remove all but filename
+              outFile = of.getName();
+              writeResult = true;
+            }
         }
 
       if (debug == 0 && !writeResult)
