@@ -1,37 +1,39 @@
 #include <image.h>
 #include "v2polygon.h"
 
+// resolution
 const int dpi = 300;
 const int dpm = dpi / 25;
 
-// querformat
+// size (in mm)
 const int xMM = 270;
 const int yMM = 180;
 
 vector<Point> makePointList(const unsigned char* xy)
 {
-  Point start(xy[0], xy[1]);
+  IPoint start(xy[0], xy[1]);
   vector<Point> pl;
   pl.push_back(start);
   int idx = 2;
-  Point p(xy[idx], xy[idx + 1]);
+  IPoint p(xy[idx], xy[idx + 1]);
   while (p != start)
     {
-      pl.push_back(p);
+      Point dp(p);
+      dp *= 1.0 / xySize;
+      pl.push_back(dp);
       idx += 2;
-      p = Point(xy[idx], xy[idx + 1]);
+      p = IPoint(xy[idx], xy[idx + 1]);
     }
   return pl;
 }
 
 void drawMarker(Image& m, vector<Point> points, Point center, int size)
 {
-  double factor = (double)size / xySize;
   Point loPoint = center - Point(size / 2, size / 2);
   vector<Point> pl(points.size());
   for (int i = 0; i < points.size(); i++)
     {
-      pl[i] = points[i] * factor + loPoint;
+      pl[i] = points[i] * size + loPoint;
     }
   Polygon polygon(pl);
   draw(polygon, m, m.maxval, m.maxval);
