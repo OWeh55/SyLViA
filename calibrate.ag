@@ -1,0 +1,45 @@
+#include <string>
+#include <vector>
+#include <iostream>
+
+#include <image.h>
+
+/*AppGen:Global*/
+
+using namespace std;
+
+/*AppGen
+  prog: Calibrate proyector and camera
+  para: filename, required, string, fnb, Filename of phase or texture image, ""
+
+  opt: d, display, void, display, Darstellung der Bilder, false
+  opt: v, verbose, Void, verbose, Viele Meldungen, false
+AppGen*/
+
+/*AppGen:Main*/
+int main(int argc, char** argv)
+{
+  /*AppGen:MainEnd*/
+  try
+    {
+      int xs,ys,mv,ch;
+      InfImgFile(fnb,xs,ys,mv,ch);
+      ColorImage texture;
+      texture.read(fnb);
+      Show(ON,texture);
+      Image tGray;
+      tGray.create(xs,ys,mv);
+      Show(ON,tGray);
+      WindowWalker w(tGray);
+      for (w.init();!w.ready();w.next())
+	{
+	  tGray.setPixel(w,mv-texture.getPixel(w).getGray());
+	}
+      GetChar();
+    }
+  catch (const char* msg)
+    {
+      cerr << "Exception: " << msg << endl;
+    }
+  return OK;
+}
