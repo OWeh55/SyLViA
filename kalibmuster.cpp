@@ -27,9 +27,8 @@ vector<Point> makePointList(const unsigned char* xy)
   return pl;
 }
 
-void drawMarker(Image& m, vector<Point> points, Point center, int size)
+void drawMarker(Image& m, vector<Point> points, Point loPoint, int size)
 {
-  Point loPoint = center - Point(size / 2, size / 2);
   vector<Point> pl(points.size());
   for (int i = 0; i < points.size(); i++)
     {
@@ -64,10 +63,10 @@ int main(int argc, char** argv)
         }
     }
 
-  int markerSize = 0.5 * rasterP;
+  int markerSizeP =  markerSize * rasterP;
 
-  drawMarker(m, makePointList(xyA), Point(3 * rasterP, 3 * rasterP), markerSize);
-  drawMarker(m, makePointList(xyB), Point(7 * rasterP, 3 * rasterP), markerSize);
+  drawMarker(m, makePointList(xyA), Point(xPosA * rasterP, yPosA * rasterP), markerSizeP);
+  drawMarker(m, makePointList(xyB), Point(xPosB * rasterP, yPosB * rasterP), markerSizeP);
 
   m.write("muster.bmp");
   GetChar();
