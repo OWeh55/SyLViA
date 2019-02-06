@@ -30,10 +30,10 @@ ifndef NOFFTW3
 LIBS := $(LIBS) -lfftw3 
 endif
 
+all: $(MAIN) patterngen kalibmuster
+
 $(MAIN): $(OBJECTS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o $(MAIN) $(OBJECTS) $(LIBS)
-
-all: $(MAIN) patterngen 
 
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c
