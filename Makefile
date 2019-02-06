@@ -1,6 +1,3 @@
-MAIN=v23d
-OBJECTS=$(MAIN).o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o
-
 ifndef ICEDIR
 ICEDIR=/home/noo/ice
 endif
@@ -30,9 +27,9 @@ ifndef NOFFTW3
 LIBS := $(LIBS) -lfftw3 
 endif
 
-all: $(MAIN) patterngen calibrationPattern
+all: v23d patterngen calibrationPattern calibrate
 
-$(MAIN): $(OBJECTS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+v23d: v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o $(MAIN) $(OBJECTS) $(LIBS)
 
 %.o:%.c
