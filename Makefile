@@ -29,8 +29,8 @@ endif
 
 all: v23d patterngen calibrationPattern calibrate
 
-v23d: v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o $(MAIN) $(OBJECTS) $(LIBS)
+v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o v23d v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(LIBS)
 
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c
@@ -54,8 +54,6 @@ clean_files:
 	-rm -f *.o depend *~ *orig
 
 clean:	clean_files dep
-
-all: $(MAIN) preview
 
 dep:
 	-rm depend 

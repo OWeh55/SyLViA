@@ -10,9 +10,8 @@ constexpr unsigned char xyA[] = { 0, 0, 2, 0, 5, 8, 8, 0, 10, 0,
                                 };
 // x shape
 constexpr unsigned char xyB[] = { 0, 0,  1, 0,  4, 4,  7, 0,  8, 0,
-                                  8, 1,  5, 5, 8, 9, 8, 10, 7, 10,
-                                  4, 6,  1, 10,  0, 10,  0, 9,  3, 5,
-                                  0, 1,  0, 0
+                                  8, 1,  5, 5, 5, 10, 3, 10,
+                                  3, 5,  0, 1,  0, 0
                                 };
 
 // position of marker is upper left corner
