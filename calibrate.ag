@@ -18,14 +18,35 @@ using namespace std;
   opt: v, verbose, Void, verbose, Viele Meldungen, false
 AppGen*/
 
+vector<Point> makePointList(const unsigned char* xy)
+{
+  IPoint start(xy[0], xy[1]);
+  vector<Point> pl;
+  pl.push_back(start);
+  int idx = 2;
+  IPoint p(xy[idx], xy[idx + 1]);
+  while (p != start)
+    {
+      Point dp(p);
+      dp *= 1.0 / xySize;
+      pl.push_back(dp);
+      idx += 2;
+      p = IPoint(xy[idx], xy[idx + 1]);
+    }
+  return pl;
+}
 
-void findXV(Image& tGray, Image& tMark, Contur& X, Contur& V)
+void findMarker(Image& tGray, Image& tMark,
+		vector<Contur> &squares, Contur& A, Contur& B)
 {
   Image imgo;
   imgo.create(tMark);
   LocalSeg(tGray, imgo, 15, 25);
 
   IPoint start(0, 0);
+  squares.clear();
+  vector<double> areas;
+  vector<Contur> conturs;
   while (SearchStart(imgo, tMark, LocalSegObj, 123, 5, start) == OK)
     {
       Contur c = CalcContur(imgo, tMark, LocalSegObj, 123, start);
@@ -37,13 +58,77 @@ void findXV(Image& tGray, Image& tMark, Contur& X, Contur& V)
               if (!c.isHole())
                 {
                   FillRegion(c, 2, tMark);
+		  double length, area, form, conv;
+		  FeatureContur(c, length, area, form, conv);
+		  if (area>100 && form<6)
+		    {
+		      if (form<1.4 && conv < 1.05)
+			{
+			  FillRegion(c, 3, tMark); // quadrat
+			  squares.push_back(c);
+			  areas.push_back(area);
+			}
+		      else
+			if (form>4 && form<5)
+			  {
+			    Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
+				   length, area, form, conv);
+			    FillRegion(c, 4, tMark);
+			    conturs.push_back(c);
+			  }
+		    }
                 }
             }
-          MarkContur(c, 1, tMark);
+          MarkContur(c, 2, tMark);
         }
       else
-        tMark.setPixel(start, 1);
+        tMark.setPixel(start, 2);
     }
+  // analysis of squares
+  int nSquares=squares.size();
+  cout << "squares: " << nSquares << endl;
+  sort(areas.begin(),areas.end());
+  double sqSize=areas[nSquares/2];
+  cout << "median size: " << sqSize << endl;
+  cout << "candidates: " << conturs.size()<<endl;
+  if (conturs.size()<2)
+    throw "Less than two polygons found";
+  
+  ObjectMatcher omA(TRM_PROJECTIVE_NOR);
+  omA.setObject(0,makePointList(xyA));
+  omA.interpolObject(0,0.1);
+ 
+  ObjectMatcher omB(TRM_PROJECTIVE_NOR);
+  omB.setObject(0,makePointList(xyB));
+  omB.interpolObject(0,0.1);
+  
+  double minDistA=numeric_limits<double>::max();
+  double minDistB=numeric_limits<double>::max();
+  
+  for (auto &c:conturs)
+    {
+      double length, area, form, conv;
+      FeatureContur(c, length, area, form, conv);
+      if (area>sqSize && area < sqSize*2)
+	{
+      omA.setObject(1,c);
+      double da=omA.getEvaluation();
+      if (da<minDistA)
+	{
+	  minDistA=da;
+	  A=c;
+	}
+      omB.setObject(1,c);
+      double db=omB.getEvaluation();
+      if (db<minDistB)
+	{
+	minDistB=db;
+	B=c;
+	}
+	}
+    }
+  MarkContur(A, 1, tMark);
+  MarkContur(B, 1, tMark);
 }
 
 /*AppGen:Main*/
@@ -71,7 +156,8 @@ int main(int argc, char** argv)
           tGray.setPixel(w, mv - texture.getPixel(w).getGray());
         }
       Contur X, V;
-      findXV(tGray, tMark, X, V);
+      vector<Contur> squares;
+      findMarker(tGray, tMark,squares, X, V);
       GetChar();
     }
   catch (const IceException& ex)
