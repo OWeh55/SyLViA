@@ -11,6 +11,7 @@
 # ignore test data
 p1
 somikon
+casio
 test.avi
 # ignore backups and temporary files
 *~
