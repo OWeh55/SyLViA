@@ -65,8 +65,10 @@ int main(int argc, char** argv)
 
   int markerSizeP =  markerSize * rasterP;
 
-  drawMarker(m, makePointList(xyA), Point(xPosA * rasterP, yPosA * rasterP), markerSizeP);
-  drawMarker(m, makePointList(xyB), Point(xPosB * rasterP, yPosB * rasterP), markerSizeP);
+  drawMarker(m, makePointList(xyA),
+             Point(xPosA * rasterP, yPosA * rasterP), markerSizeP);
+  drawMarker(m, makePointList(xyB),
+             Point(xPosB * rasterP, yPosB * rasterP), markerSizeP);
 
   m.write("muster.bmp");
   GetChar();
