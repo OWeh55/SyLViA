@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include <image.h>
-
+#include "FileName.h"
 #include "v2polygon.h"
 
 constexpr double rasterMM = 22.4;
@@ -19,6 +19,20 @@ using namespace std;
   opt: d, display, void, display, Darstellung der Bilder, false
   opt: v, verbose, Void, verbose, Viele Meldungen, false
 AppGen*/
+
+vector<string> split(const string& s, char del)
+{
+  vector<string> result(1);
+  for (int i = 0; i < s.size(); i++)
+    {
+      char c = s[i];
+      if (c != del)
+        result.back() += c;
+      else
+        result.push_back("");
+    }
+  return result;
+}
 
 vector<Point> makePointList(const unsigned char* xy, double xPos, double yPos)
 {
@@ -47,7 +61,7 @@ vector<Point> makePointList(const unsigned char* xy, double xPos, double yPos)
   return pl;
 }
 
-void drawPointLists(const Image& img, const ObjectMatcher& om)
+void drawReferences(const Image& img, const ObjectMatcher& om)
 {
   vector<Point> pl1;
   vector<Point> pl2;
@@ -59,20 +73,20 @@ void drawPointLists(const Image& img, const ObjectMatcher& om)
 }
 
 void findMarker(Image& tGray, Image& tMark,
-                vector<Contur>& squares, Contur& A, Contur& B)
+                vector<Contur>& squares, Trafo& tA, Trafo& tB)
 {
-  Image imgo;
-  imgo.create(tMark);
-  LocalSeg(tGray, imgo, 15, 25);
+  Image localSegImage;
+  localSegImage.create(tMark);
+  LocalSeg(tGray, localSegImage, 15, 25);
 
   IPoint start(0, 0);
   squares.clear();
   vector<double> areas;
   vector<Contur> conturs;
 
-  while (SearchStart(imgo, tMark, LocalSegObj, 123, 5, start) == OK)
+  while (SearchStart(localSegImage, tMark, LocalSegObj, 123, 5, start) == OK)
     {
-      Contur c = CalcContur(imgo, tMark, LocalSegObj, 123, start);
+      Contur c = CalcContur(localSegImage, tMark, LocalSegObj, 123, start);
 
       if (c.isValid())
         {
@@ -135,7 +149,8 @@ void findMarker(Image& tGray, Image& tMark,
 
   double minDistA = numeric_limits<double>::max();
   double minDistB = numeric_limits<double>::max();
-
+  Contur A;
+  Contur B;
   for (auto& c : conturs)
     {
       double length, area, form, conv;
@@ -169,13 +184,13 @@ void findMarker(Image& tGray, Image& tMark,
   omB.setObject(1, B);
   omB.interpolObject(1, 0.1);
 
-  Trafo trA = omA.getTrafo();
+  tA = omA.getTrafo();
   //  cout << trA.getMatrix() << endl;
 
   //  drawPointLists(tMark,omA);
   //  GetChar();
 
-  Trafo trB = omB.getTrafo();
+  tB = omB.getTrafo();
   //  cout << trB.getMatrix() << endl;
 
   //  drawPointLists(tMark,omB);
@@ -186,7 +201,7 @@ void findMarker(Image& tGray, Image& tMark,
       {
         Point p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM);
         Point pp;
-        transform(trA, p, pp);
+        transform(tA, p, pp);
         //        cout << p << " -> " << pp << endl;
         Marker(1, pp, 1, 7, tMark);
       }
@@ -196,7 +211,7 @@ void findMarker(Image& tGray, Image& tMark,
       {
         Point p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM);
         Point pp;
-        transform(trB, p, pp);
+        transform(tB, p, pp);
         //        cout << p << " -> " << pp << endl;
         Marker(1, pp, 5, 7, tMark);
       }
@@ -208,10 +223,38 @@ int main(int argc, char** argv)
   /*AppGen:MainEnd*/
   try
     {
+      FileName fnt(fnb);
+      fnt.setExtension("pnm");
+      FileName fnp(fnb);
+      fnp.setExtension("pgm");
+      string basename = fnt.getName();
+      vector<string> parts = split(basename, '_');
+      //      for (auto s:parts)
+      //  cout << ">" << s << "<" << endl;
+      if (parts.back() == "phase" || parts.back() == "texture" || parts.back().empty())
+        parts.pop_back();
+      basename = "";
+      for (const auto& s : parts)
+        {
+          if (basename.empty())
+            basename = s;
+          else
+            basename += "_" + s;
+        }
+      fnt.setName(basename + "_texture");
+      fnp.setName(basename + "_phase");
+      if (verbose)
+        {
+          cout << "using files: " << endl;
+          cout << "      " << (string)fnt << endl;
+          cout << "      " << (string)fnp << endl;
+        }
+
       int xs, ys, mv, ch;
-      InfImgFile(fnb, xs, ys, mv, ch);
+      InfImgFile(fnt, xs, ys, mv, ch);
+
       ColorImage texture;
-      texture.read(fnb);
+      texture.read(fnt);
       if (display)
         Show(ON, texture);
       Image tGray;
@@ -226,10 +269,98 @@ int main(int argc, char** argv)
         {
           tGray.setPixel(w, mv - texture.getPixel(w).getGray());
         }
-      Contur X, V;
+      Trafo trA, trB;
       vector<Contur> squares;
-      findMarker(tGray, tMark, squares, X, V);
-      GetChar();
+      findMarker(tGray, tMark, squares, trA, trB);
+      if (display)
+        GetChar();
+
+      Trafo trAi = trA.inverse();
+      Trafo trBi = trB.inverse();
+
+      int nSquares = squares.size();
+      vector<Point> squarePos(nSquares);
+      for (int i = 0; i < nSquares; i++)
+        {
+          squarePos[i] = Centroid(squares[i]);
+        }
+
+      Image phase;
+      phase.read(fnp);
+
+      vector<Point> uv;
+      vector<double> u2;
+      vector<Vector3d> xyz;
+      // find square markers in 2 planes
+
+      for (int x = 2; x < 6; x++)
+        for (int y = 0; y < 6; y++)
+          {
+            Point p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM);
+            double dmin = 1e5;
+            int minIdx = -1;
+            for (int i = 0; i < nSquares; i++)
+              {
+                Point pp;
+                transform(trAi, squarePos[i], pp);
+                double dist = (pp - p).length();
+                if (dist < dmin)
+                  {
+                    minIdx = i;
+                    dmin = dist;
+                  }
+              }
+            cout << dmin << endl;
+            // found nearest square
+            if (dmin < 0.3 * rasterMM)
+              {
+                // marker found
+                int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
+                if (phaseI > 0) // phase valid?
+                  {
+                    uv.push_back(squarePos[minIdx]);
+                    u2.push_back(phaseI);
+                    xyz.push_back(Vector3d(p.x, p.y, 0));
+                  }
+              }
+          }
+
+      for (int x = 0; x < 2; x++)
+        for (int y = 0; y < 6; y++)
+          {
+            Point p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM);
+            double dmin = 1e5;
+            int minIdx = -1;
+            for (int i = 0; i < nSquares; i++)
+              {
+                Point pp;
+                transform(trBi, squarePos[i], pp);
+                double dist = (pp - p).length();
+                if (dist < dmin)
+                  {
+                    minIdx = i;
+                    dmin = dist;
+                  }
+              }
+            cout << dmin << endl;
+            // found nearest square
+            if (dmin < 0.3 * rasterMM)
+              {
+                // marker found
+                int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
+                if (phaseI > 0) // phase valid?
+                  {
+                    uv.push_back(squarePos[minIdx]);
+                    u2.push_back(phaseI);
+                    xyz.push_back(Vector3d(p.x, p.y, deltaZ));
+                  }
+              }
+          }
+      /*
+      cout << uv << endl;
+      cout << u2 << endl;
+      cout << xyz << endl;
+      */
     }
   catch (const IceException& ex)
     {
