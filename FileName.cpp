@@ -100,6 +100,11 @@ std::string FileName::getFullName() const
   return res;
 }
 
+FileName::operator string() const
+{
+  return getFullName();
+}
+
 std::string FileName::getPath() const
 {
   string res;

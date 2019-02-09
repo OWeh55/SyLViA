@@ -33,7 +33,7 @@ public:
   void setName(const std::string& n);
   void setPath(const std::string& p);
   void setExtension(const std::string& x);
-
+  operator std::string() const;
 private:
   bool absolute;
   std::vector<std::string> path;
