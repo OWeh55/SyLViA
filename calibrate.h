@@ -22,6 +22,7 @@ private:
   const vector<double>& u2;
   const vector<Vector3d>& xyz;
   int nRefs;
+  mutable int nSteps;
 };
 
 vector<double> calculateCalibration(const vector<Point>& uv,

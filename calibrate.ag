@@ -15,7 +15,7 @@ using namespace std;
 /*AppGen
   prog: Calibrate projector and camera
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
-
+  opt: p, phaseresolution, double, phaseResolution, Auflösung der Phase, 32.0
   opt: d, display, void, display, Darstellung der Bilder, false
   opt: v, verbose, Void, verbose, Viele Meldungen, false
 AppGen*/
@@ -112,6 +112,7 @@ int main(int argc, char** argv)
       vector<Contur> squares;
       findMarker(tGray, tMark, squares, trA, trB);
 
+      cout << trA.getMatrix() << endl;
       Trafo trAi = trA.inverse();
       Trafo trBi = trB.inverse();
 
@@ -130,8 +131,8 @@ int main(int argc, char** argv)
       vector<Vector3d> xyz;
       // find square markers in 2 planes
       // create list of references
-      for (int x = 2; x < 6; x++)
-        for (int y = 0; y < 6; y++)
+      for (int y = 0; y < 6; y++)
+        for (int x = 2; x < 6; x++)
           {
             Point p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM);
             double dmin = 1e5;
@@ -156,14 +157,15 @@ int main(int argc, char** argv)
                 if (phaseI > 0) // phase valid?
                   {
                     uv.push_back(squarePos[minIdx]);
-                    u2.push_back(phaseI);
+                    u2.push_back(phaseI / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, 0));
+                    Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 1, DEFAULT, tMark);
                   }
               }
           }
 
-      for (int x = 0; x < 2; x++)
-        for (int y = 0; y < 6; y++)
+      for (int y = 0; y < 6; y++)
+        for (int x = 0; x < 2; x++)
           {
             Point p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM);
             double dmin = 1e5;
@@ -188,8 +190,9 @@ int main(int argc, char** argv)
                 if (phaseI > 0) // phase valid?
                   {
                     uv.push_back(squarePos[minIdx]);
-                    u2.push_back(phaseI);
+                    u2.push_back(phaseI / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, -deltaZ));
+                    Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 2, DEFAULT, tMark);
                   }
               }
           }

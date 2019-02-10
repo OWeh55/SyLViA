@@ -4,7 +4,7 @@
 LMcalib::LMcalib(const vector<Point>& uv,
                  const vector<double>& u2,
                  const vector<Vector3d>& xyz):
-  uv(uv), u2(u2), xyz(xyz), nRefs(uv.size()) {}
+  uv(uv), u2(u2), xyz(xyz), nRefs(uv.size()), nSteps(0) {}
 
 int LMcalib::getDimension() const
 {
@@ -13,6 +13,7 @@ int LMcalib::getDimension() const
 
 int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
 {
+  vector<Point> points;
   int d = 0;
   for (int i = 0; i < nRefs; i++)
     {
@@ -27,6 +28,7 @@ int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
       double wc = p[8] * x + p[9] * y + p[10] * z + 1;
       double uuc = uc / wc;
       double vvc = vc / wc;
+      points.push_back(Point(uuc, vvc));
       result[d++] = u - uuc;
       result[d++] = v - vvc;
 
@@ -35,7 +37,46 @@ int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
       double uu2 = up / wp;
       result[d++] = ud2 - uu2;
     }
-  //  cout << p << endl;
+#if 0
+  nSteps++;
+  if (nSteps % 400 == 0)
+    {
+      Image debugI;
+      debugI.create(1200, 900);
+      debugI.set(0);
+      Show(ON, debugI);
+      for (auto p : points)
+        Marker(5, p, 255, 10, debugI);
+      GetChar();
+      Show(OFF, debugI);
+    }
+  d = 0;
+  for (int k = 0; k < 3; k++)
+    {
+      for (int i = 0; i < 4; i++)
+        if (d < 11)
+          cout << p[d++] << " ";
+      cout << endl;
+    }
+  cout << "--------" << endl;
+
+  for (int k = 0; k < 2; k++)
+    {
+      for (int i = 0; i < 4; i++)
+        if (d < 18)
+          cout << p[d++] << " ";
+      cout << endl;
+    }
+  cout << "--------" << endl;
+  for (int i = 0; i < result.size(); i++)
+    {
+      cout << result[i] << " ";
+      if (i % 3 == 2)
+        cout << endl;
+    }
+#endif
+  /*
+  */
   return 1;
 }
 
@@ -45,18 +86,19 @@ vector<double> calculateCalibration(const vector<Point>& uv,
 {
   LMcalib calibFunctor(uv, u2, xyz);
   vector<double> cData(18, 0.0);
-  cData[0] = 1;
-  cData[5] = 1;
-  cData[11] = 1;
+  cData[0] = 2.1;
+  cData[3] = 500;
+  cData[5] = 2.1;
+  cData[7] = 92;
+  cData[11] = 1.0;
   LMSolver lms(calibFunctor);
   lms.solve(cData);
   if (verbose)
     {
-      cout << "Nach " << lms.getNIterations() << " Iterationen " << endl;
-      cout << "Kode für Beendigung: " << lms.getInfo() << endl;
+      cout << "after " << lms.getNIterations() << " iterations " << endl;
+      cout << "code: " << lms.getInfo() << endl;
       cout << "    " << LMDifMessage(lms.getInfo()) << endl;
-
-      cout << "Restfehler: " << lms.getErrorValue() << endl;
+      cout << "remaining error: " << lms.getErrorValue() << endl;
     }
   return cData;
 }
