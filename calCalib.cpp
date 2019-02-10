@@ -8,7 +8,7 @@ LMcalib::LMcalib(const vector<Point>& uv,
 
 int LMcalib::getDimension() const
 {
-  return nRefs * 2;
+  return nRefs * 3;
 }
 
 int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
@@ -35,6 +35,7 @@ int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
       double uu2 = up / wp;
       result[d++] = ud2 - uu2;
     }
+  //  cout << p << endl;
   return 1;
 }
 
@@ -42,18 +43,20 @@ vector<double> calculateCalibration(const vector<Point>& uv,
                                     const vector<double>& u2,
                                     const vector<Vector3d>& xyz)
 {
-  LMcalib calibFunctor(uv,u2,xyz);
-  vector<double> cData(18,0.0);
-  cData[0]=1;
-  cData[5]=1;
-  cData[11]=1;
+  LMcalib calibFunctor(uv, u2, xyz);
+  vector<double> cData(18, 0.0);
+  cData[0] = 1;
+  cData[5] = 1;
+  cData[11] = 1;
   LMSolver lms(calibFunctor);
   lms.solve(cData);
   if (verbose)
     {
-  cout << "Nach " << lms.getNIterations() << " Iterationen " << endl;
-  cout << "Kode für Beendigung: " << lms.getInfo() << endl;
-  cout << "Restfehler: " << lms.getErrorValue() << endl;
+      cout << "Nach " << lms.getNIterations() << " Iterationen " << endl;
+      cout << "Kode für Beendigung: " << lms.getInfo() << endl;
+      cout << "    " << LMDifMessage(lms.getInfo()) << endl;
+
+      cout << "Restfehler: " << lms.getErrorValue() << endl;
     }
   return cData;
 }

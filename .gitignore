@@ -6,6 +6,7 @@
 !*/
 # ignore generated files
 *.o
+muster.bmp
 # generated gnuplot files
 *.gp
 # ignore test data

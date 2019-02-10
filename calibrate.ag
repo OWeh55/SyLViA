@@ -189,7 +189,7 @@ int main(int argc, char** argv)
                   {
                     uv.push_back(squarePos[minIdx]);
                     u2.push_back(phaseI);
-                    xyz.push_back(Vector3d(p.x, p.y, deltaZ));
+                    xyz.push_back(Vector3d(p.x, p.y, -deltaZ));
                   }
               }
           }
@@ -197,12 +197,14 @@ int main(int argc, char** argv)
         {
           cout << "found " << uv.size() << " references" << endl;
         }
+      for (int i = 0; i < uv.size(); i++)
+        cout << uv[i] << " " << u2[i] << " " << xyz[i] << endl;
       /*
       cout << uv << endl;
       cout << u2 << endl;
       cout << xyz << endl;
       */
-      vector<double> cData=calculateCalibration(uv,u2,xyz);
+      vector<double> cData = calculateCalibration(uv, u2, xyz);
       if (display)
         GetChar();
     }
