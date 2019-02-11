@@ -1,6 +1,155 @@
 #include "v23d.h"
 #include "v2file.h"
 
+double absGrayDiff(const Image& img1,
+                   const Image& img2)
+{
+  int n = 0;
+  int gsum = 0;
+  WindowWalker ww(img1);
+  for (ww.init(); !ww.ready(); ww.next())
+    {
+      int gray1 = img1.getPixelUnchecked(ww);
+      int gray2 = img2.getPixelUnchecked(ww);
+      int grayval = gray1 - gray2;
+      gsum += abs(grayval);
+      n++;
+    }
+  return double(gsum) / n;
+}
+
+double graySum(const Image& img)
+{
+  int gsum = 0;
+  int n = 0;
+  WindowWalker ww(img);
+  for (ww.init(); !ww.ready(); ww.next())
+    {
+      int gray = img.getPixelUnchecked(ww);
+      gsum += gray;
+      n++;
+    }
+  return double(gsum) / n;
+}
+
+void scanVideo(const string& fn,
+               vector<double>& gsum,
+               vector<double>& dgsum,
+               int& fps,
+               int first, int last,
+               int colorMode,
+               const Window& readWindow)
+{
+  int xo, yo, mv;
+
+  VideoFile input(fn);
+  input.getPara(xo, yo, mv, fps);
+
+  if (verbose)
+    {
+      cout << "video " << fn << " with " << xo << "x" << yo ;
+      cout << ", " << fps << " frames per second" << endl;
+    }
+  Window window(readWindow);
+
+  if (window.p2.x >= xo)
+    window.p2.x = xo - 1;
+
+  if (window.p2.y >= yo)
+    window.p2.y = yo - 1;
+
+  int xSize = window.Width();
+  int ySize = window.Height();
+
+  ColorImage in;
+  in.create(xo, yo, mv);
+  if (debug & 16)
+    Show(ON, in);
+
+  Image thisImage;
+  thisImage.create(xSize, ySize, mv);
+  Image lastImage;
+  lastImage.create(xSize, ySize, mv);
+
+  gsum.clear();
+  dgsum.clear();
+
+  while (input.FrameNumber() < first &&
+         input.read())
+    {
+      if (verbose)
+        {
+          if (input.FrameNumber() % 100 == 0)
+            cout << "skipping frame: " << input.FrameNumber() << endl;
+        }
+    }
+
+  int frames = 0;
+  if (last < 0)
+    last = numeric_limits<int>::max();
+  while (input.FrameNumber() < last &&
+         input.read(in))
+    {
+      frames++;
+
+      //      cout << frames << " frames read" << endl;
+      //      cout << "FrameNumber: " << input.FrameNumber() << endl;
+
+      WindowWalker ww(thisImage);
+      IPoint shift = window.p1;
+      switch (colorMode)
+        {
+        case 'r':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, mv - cv.red);
+            }
+          break;
+        case 'g':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, mv - cv.green);
+            }
+          break;
+        case 'b':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, mv - cv.blue);
+            }
+
+          break;
+        case 'i':
+          for (ww.init(); !ww.ready(); ww.next())
+            {
+              ColorValue cv = in.getPixelUnchecked(ww + shift);
+              thisImage.setPixelUnchecked(ww, cv.getGray());
+            }
+          break;
+        }
+      if (frames == 1) // first frame read
+        CopyImg(thisImage, lastImage);
+
+      // calculate gray value sum
+      // and absolute difference to previous image
+      double gSum = graySum(thisImage);
+      double dgSum = absGrayDiff(thisImage, lastImage);
+      gsum.push_back(gSum);
+      dgsum.push_back(dgSum);
+      CopyImg(thisImage, lastImage);
+      if (verbose)
+        if (frames % 100 == 0)
+          {
+            cout << "reading frame #" << input.FrameNumber();
+            cout << " (" << frames << " frames)" << endl;;
+          }
+    }
+  if (debug & 16)
+    Show(OFF, in);
+}
+
 
 void analysis(const std::vector<double>& gp,
               const std::vector<double>& dgp,
