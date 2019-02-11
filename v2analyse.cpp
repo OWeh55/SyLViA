@@ -1,35 +1,6 @@
 #include "v23d.h"
+#include "v2file.h"
 
-double absGrayDiff(const Image& img1,
-                   const Image& img2)
-{
-  int n = 0;
-  int gsum = 0;
-  WindowWalker ww(img1);
-  for (ww.init(); !ww.ready(); ww.next())
-    {
-      int gray1 = img1.getPixelUnchecked(ww);
-      int gray2 = img2.getPixelUnchecked(ww);
-      int grayval = gray1 - gray2;
-      gsum += abs(grayval);
-      n++;
-    }
-  return double(gsum) / n;
-}
-
-double graySum(const Image& img)
-{
-  int gsum = 0;
-  int n = 0;
-  WindowWalker ww(img);
-  for (ww.init(); !ww.ready(); ww.next())
-    {
-      int gray = img.getPixelUnchecked(ww);
-      gsum += gray;
-      n++;
-    }
-  return double(gsum) / n;
-}
 
 void analysis(const std::vector<double>& gp,
               const std::vector<double>& dgp,

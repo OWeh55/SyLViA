@@ -1,9 +1,41 @@
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 
 #include "v23d.h"
+#include "v2file.h"
 
 using namespace std;
+double absGrayDiff(const Image& img1,
+                   const Image& img2)
+{
+  int n = 0;
+  int gsum = 0;
+  WindowWalker ww(img1);
+  for (ww.init(); !ww.ready(); ww.next())
+    {
+      int gray1 = img1.getPixelUnchecked(ww);
+      int gray2 = img2.getPixelUnchecked(ww);
+      int grayval = gray1 - gray2;
+      gsum += abs(grayval);
+      n++;
+    }
+  return double(gsum) / n;
+}
+
+double graySum(const Image& img)
+{
+  int gsum = 0;
+  int n = 0;
+  WindowWalker ww(img);
+  for (ww.init(); !ww.ready(); ww.next())
+    {
+      int gray = img.getPixelUnchecked(ww);
+      gsum += gray;
+      n++;
+    }
+  return double(gsum) / n;
+}
 
 void scanVideo(const string& fn,
                vector<double>& gsum,
@@ -133,6 +165,7 @@ void readImage(VideoFile& v, int frameNr, ColorImage& img)
 
 void readSequence(VideoFile& v,
                   double leftBoundary, double rightBoundary,
+                  int sequenceLength,
                   int colorMode,
                   const Window& readWindow,
                   vector<ImageD>& seq,
@@ -153,7 +186,7 @@ void readSequence(VideoFile& v,
 
   double patternLength = (rightBoundary - leftBoundary) / sequenceLength;
   leftBoundary += patternLength; // skip white pattern
-  seq.resize(sequenceDescription.size());
+  seq.resize(sequenceLength - 2);
 
   ImageD r, g, b;
   r.create(xs, ys);
@@ -162,7 +195,7 @@ void readSequence(VideoFile& v,
   g.set(0);
   b.create(xs, ys);
   b.set(0);
-  int nPattern = sequenceDescription.size();
+  int nPattern = sequenceLength - 2;
 
   for (int i = 0; i < nPattern; i++) // all pattern pairs (pos+neg)
     {
@@ -204,6 +237,35 @@ void readSequence(VideoFile& v,
                                   g.getPixel(w),
                                   b.getPixel(w)) / nPattern / 2);
     }
+}
+
+void writeCalib(const string& name, const vector<double>& para)
+{
+  ofstream os(name);
+  if (verbose)
+    cout << "writing " << name << endl;
+  os << "cal1" << endl;
+  for (int i = 0; i < para.size(); i++)
+    os << setw(8) << para[i] << endl;
+}
+
+void readCalib(const string& name, vector<double>& para)
+{
+  ifstream is(name);
+  string tag;
+  getline(is, tag);
+  if (tag == "cal1")
+    {
+      para.clear();
+      for (int i = 0; i < 18; i++)
+        {
+          double p;
+          is >> p;
+          para.push_back(p);
+        }
+    }
+  else
+    throw IceException("readCalib", "unkbown format");
 }
 
 void writePlotFile(const string& name, const vector<double>& v)

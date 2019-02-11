@@ -8,6 +8,7 @@
 #include "FileName.h"
 
 #include "v23d.h"
+#include "v2file.h"
 
 /*AppGen:Global*/
 
@@ -152,6 +153,7 @@ int main(int argc, char** argv)
           ColorImage cImg;
           readSequence(v,
                        sequenceBoundaries[i], sequenceBoundaries[i + 1],
+                       sequenceLength,
                        'g',  // color mode
                        readWindow,
                        seq, cImg);

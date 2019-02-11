@@ -22,25 +22,6 @@ extern std::string sequenceDescription;
 extern bool verbose;
 extern int debug;
 
-// v2file.cpp
-void scanVideo(const string& fn,
-               vector<double>& gsum,
-               vector<double>& dgsum,
-               int& fps,
-               int first, int last,
-               int colorMode,
-               const Window& readWindow);
-
-void readSequence(VideoFile& v,
-                  double leftBoundary, double rightBoundary,
-                  int colorMode,
-                  const Window& readWindow,
-                  vector<ImageD>& seq,
-                  ColorImage& cImg);
-
-void writePlotFile(const std::string& name, const std::vector<double>& v);
-void writePlotFile(const std::string& name, const std::vector<double>& v1, const std::vector<double>& v2);
-
 // v2analyse
 void analysis(const std::vector<double>& gvs,
               const std::vector<double>& gvds,
