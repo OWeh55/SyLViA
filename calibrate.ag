@@ -6,6 +6,7 @@
 #include "FileName.h"
 #include "v2polygon.h"
 
+#include "v2file.h"
 #include "v2trafo.h"
 #include "calibrate.h"
 
@@ -114,7 +115,7 @@ int main(int argc, char** argv)
       vector<Contur> squares;
       findMarker(tGray, tMark, squares, trA, trB);
 
-      cout << trA.getMatrix() << endl;
+      // cout << trA.getMatrix() << endl;
       Trafo trAi = trA.inverse();
       Trafo trBi = trB.inverse();
 
@@ -202,14 +203,13 @@ int main(int argc, char** argv)
         {
           cout << "found " << uv.size() << " references" << endl;
         }
+      /*
       for (int i = 0; i < uv.size(); i++)
         cout << uv[i] << " " << u2[i] << " " << xyz[i] << endl;
-      /*
-      cout << uv << endl;
-      cout << u2 << endl;
-      cout << xyz << endl;
       */
       vector<double> cData = calculateParameter(uv, u2, xyz);
+
+      writeCalib(calFN, cData);
       if (display)
         GetChar();
     }
