@@ -85,10 +85,10 @@ vector<double> calculateParameter(const vector<Point>& uv,
 {
   LMcalib calibFunctor(uv, u2, xyz);
   vector<double> cData(18, 0.0);
-  cData[0] = 2.1;
+  cData[0] = 2;
   cData[3] = 500;
-  cData[5] = 2.1;
-  cData[7] = 92;
+  cData[5] = 2;
+  cData[7] = 200;
   cData[11] = 1.0;
   LMSolver lms(calibFunctor);
   lms.solve(cData);
