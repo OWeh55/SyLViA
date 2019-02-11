@@ -2,10 +2,58 @@
 #include <iostream>
 #include <iomanip>
 
+#include "FileName.h"
 #include "v23d.h"
 #include "v2file.h"
 
 using namespace std;
+
+vector<string> split(const string& s, char del)
+{
+  vector<string> result(1);
+  for (int i = 0; i < s.size(); i++)
+    {
+      char c = s[i];
+      if (c != del)
+        result.back() += c;
+      else
+        result.push_back("");
+    }
+  return result;
+}
+
+void fileNames(const string& baseFileName, string& textureFN, string& phaseFN, string& calFN)
+{
+  FileName fnt(baseFileName);
+  fnt.setExtension("pnm");
+  FileName fnp(baseFileName);
+  fnp.setExtension("pgm");
+  FileName fnc(baseFileName);
+  fnc.setExtension("cal");
+
+  string basename = fnt.getName();
+  vector<string> parts = split(basename, '_');
+
+  // remove content marker
+  if (parts.back() == "phase" || parts.back() == "texture" || parts.back() == "cal" || parts.back().empty())
+    parts.pop_back();
+  // recombine parts
+  basename = "";
+  for (const auto& s : parts)
+    {
+      if (basename.empty())
+        basename = s;
+      else
+        basename += "_" + s;
+    }
+
+  fnt.setName(basename + "_texture");
+  fnp.setName(basename + "_phase");
+  fnc.setName(basename + "_cal");
+  textureFN = fnt;
+  phaseFN = fnp;
+  calFN = fnc;
+}
 
 void readImage(VideoFile& v, int frameNr, ColorImage& img)
 {
@@ -102,9 +150,11 @@ void writeCalib(const string& name, const vector<double>& para)
     os << setw(8) << para[i] << endl;
 }
 
-void readCalib(const string& name, vector<double>& para)
+bool readCalib(const string& name, vector<double>& para)
 {
   ifstream is(name);
+  if (!is.good())
+    return false;
   string tag;
   getline(is, tag);
   if (tag == "cal1")
@@ -119,6 +169,7 @@ void readCalib(const string& name, vector<double>& para)
     }
   else
     throw IceException("readCalib", "unkbown format");
+  return true;
 }
 
 void writePlotFile(const string& name, const vector<double>& v)

@@ -7,7 +7,7 @@ void transform(const vector<double>& para,
                Point& uv, double& u2);
 
 void reconstruct(const vector<double>& para,
-                 const Point& uv, double u2,
+                 Point uv, double u2,
                  Vector3d& xyz);
 
 // calibration (estimate parameters)

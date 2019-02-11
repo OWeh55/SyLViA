@@ -4,7 +4,9 @@
 #include <vector>
 #include <string>
 
-void scanVideo(const string& fn,
+void fileNames(const std::string& baseFileName, std::string& textureFN, std::string& phaseFN, std::string& calFN);
+
+void scanVideo(const std::string& fn,
                vector<double>& gsum,
                vector<double>& dgsum,
                int& fps,
@@ -25,6 +27,6 @@ void writePlotFile(const std::string& name, const std::vector<double>& v1,
                    const std::vector<double>& v2);
 
 void writeCalib(const std::string& name, const std::vector<double>& v);
-void readCalib(const std::string& name, std::vector<double>& v);
+bool readCalib(const std::string& name, std::vector<double>& v);
 
 #endif
