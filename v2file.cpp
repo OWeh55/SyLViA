@@ -87,7 +87,9 @@ void readSequence(VideoFile& v,
 
   double patternLength = (rightBoundary - leftBoundary) / sequenceLength;
   leftBoundary += patternLength; // skip white pattern
-  seq.resize(sequenceLength - 2);
+
+  int nPattern = (sequenceLength - 2) / 2;
+  seq.resize(nPattern);
 
   ImageD r, g, b;
   r.create(xs, ys);
@@ -96,7 +98,6 @@ void readSequence(VideoFile& v,
   g.set(0);
   b.create(xs, ys);
   b.set(0);
-  int nPattern = sequenceLength - 2;
 
   for (int i = 0; i < nPattern; i++) // all pattern pairs (pos+neg)
     {
