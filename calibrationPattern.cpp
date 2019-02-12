@@ -45,21 +45,29 @@ int main(int argc, char** argv)
   m.set(0);
   Show(ON, m);
   int rasterMM = 20;
-  int squareMM = 5;
+  int squareMM = 8;
+  int holeMM = 5;
   int nX = xMM / rasterMM;
   int nY = yMM / rasterMM;
   int rasterP = rasterMM * dpm;
   int squareP = squareMM * dpm;
+  int holeP = holeMM * dpm;
   int border = (rasterP - squareP) / 2;
+  int borderH = (rasterP - holeP) / 2;
   for (int yi = 0; yi < nY; yi++)
     {
       int y0 = yi * rasterP + border;
+      int y1 = yi * rasterP + borderH;
       for (int xi = 0; xi < nX; xi++)
         {
           int x0 = xi * rasterP + border;
+          int x1 = xi * rasterP + borderH;
           for (int y = 0; y < squareP; y++)
             for (int x = 0; x < squareP; x++)
               m.setPixel(x + x0, y + y0, 255);
+          for (int y = 0; y < holeP; y++)
+            for (int x = 0; x < holeP; x++)
+              m.setPixel(x + x1, y + y1, 0);
         }
     }
 

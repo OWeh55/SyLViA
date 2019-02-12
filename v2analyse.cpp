@@ -194,7 +194,7 @@ void analysis(const std::vector<double>& gp,
   vector<double> dgps = powerSpectrum(dg);
   if (debug & 1)
     writePlotFile("gvadps.gp", dgps);
-  cout << "estimation: " <<  sequenceLength* gfMax << endl;
+
   //  cout << "+/- : " << sequenceLength* gfMax / 2 << endl;
   double pfMax = findMaxAround(dgps, 2 * sequenceLength * gfMax,
                                sequenceLength * gfMax / 2) / 2;
