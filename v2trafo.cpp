@@ -101,3 +101,16 @@ vector<double> calculateParameter(const vector<Point>& uv,
     }
   return cData;
 }
+
+void printPara(const vector<double>& p)
+{
+  cout << fixed << setprecision(4);
+  cout << "--" << endl;
+  cout << p[0] << " " << p[1] << " " << p[2] << " " << p[3] << endl;
+  cout << p[4] << " " << p[5] << " " << p[6] << " " << p[7] << endl;
+  cout << p[8] << " " << p[9] << " " << p[10] << " " << 1 << endl;
+  cout << "--" << endl;
+  cout << p[11] << " " << p[12] << " " << p[13] << " " << p[14] << endl;
+  cout << p[15] << " " << p[16] << " " << p[17] << " " << 1 << endl;
+  cout << "--" << endl;
+}

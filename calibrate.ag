@@ -147,7 +147,7 @@ int main(int argc, char** argv)
                   {
                     uv.push_back(squarePos[minIdx]);
                     u2.push_back(phaseI / phaseResolution);
-                    xyz.push_back(Vector3d(p.x, p.y, -deltaZ));
+                    xyz.push_back(Vector3d(p.x, p.y, deltaZ));
                     Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 2, DEFAULT, tMark);
                   }
               }
@@ -160,7 +160,10 @@ int main(int argc, char** argv)
       for (int i = 0; i < uv.size(); i++)
         cout << uv[i] << " " << u2[i] << " " << xyz[i] << endl;
       */
+
       vector<double> cData = calculateParameter(uv, u2, xyz);
+      if (verbose)
+        printPara(cData);
 
       writeCalib(calFN, cData);
       if (display)

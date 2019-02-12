@@ -38,6 +38,9 @@ calibrate: calibrate.o calMarker.o v2trafo.o v2file.o FileName.o $(ICEDIR)/lib/$
 makeCV: makeCV.o v2file.o FileName.o v2trafo.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o makeCV makeCV.o FileName.o v2file.o v2trafo.o $(LIBS)	
 
+testcalib: testcalib.o v2trafo.o  $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o v2trafo.o $(LIBS)	
+
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c
 
@@ -58,6 +61,7 @@ makeCV: makeCV.o v2file.o FileName.o v2trafo.o $(ICEDIR)/lib/$(MACHTYPE)/libice.
 
 clean_files:
 	-rm -f *.o depend *~ *orig
+	-rm -f .*.del_cache
 
 clean:	clean_files dep
 

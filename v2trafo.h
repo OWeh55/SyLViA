@@ -32,4 +32,7 @@ vector<double> calculateParameter(const vector<Point>& uv,
                                   const vector<Vector3d>& xyz);
 
 extern bool verbose;
+
+void printPara(const vector<double>& p);
+
 #endif

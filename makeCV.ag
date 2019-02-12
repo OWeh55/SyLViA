@@ -12,62 +12,100 @@
 using namespace std;
 
 /*AppGen
-  prog: Extract 3d data to triangle viewer
+  prog: Extract 3d data for triangle viewer
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
-  opt: p, phaseresolution, double, phaseResolution, Auflösung der Phase, 32.0
-  opt: d, display, void, display, Darstellung der Bilder, false
-  opt: D, debug, Void, debug, Debug-Information ausgeben, false
-  opt: v, verbose, Void, verbose, Viele Meldungen, false
+  opt: c, calibfile, string, calibFilename, Name of calibration file,""
+  opt: p, phaseresolution, double, phaseResolution, Resolution of phase image, 32.0
+  opt: d, display, void, display, display images, false
+  opt: D, debug, Void, debug, print debug information, false
+  opt: v, verbose, Void, verbose, be verbose, false
 AppGen*/
 
 /*AppGen:Main*/
 int main(int argc, char** argv)
 {
   /*AppGen:MainEnd*/
-  string textureFN;
-  string phaseFN;
-  string calibFN;
-  fileNames(baseFileName, textureFN, phaseFN, calibFN);
-  ColorImage textureImage;
-  textureImage.read(textureFN);
-  Show(ON, textureImage);
-  Image phaseImage;
-  phaseImage.read(phaseFN);
-  Show(GRAY, phaseImage);
-
-  FileName fn(calibFN);
-  vector<double> para;
-  if (!readCalib(calibFN, para))
+  try
     {
-      vector<string> calFiles;
-      Directory(calFiles, fn.getPath() + "/*cal", DIR_FILE);
-      if (calFiles.empty())
-        throw IceException("Load calib", "No file found");
-      cout << calFiles[0] << endl;
-      readCalib(fn.getPath() + "/" + calFiles[0], para);
-    }
 
-  // vorerst schreiben wir eine Datei von Punktkoordinaten
-  ofstream os("xyz.txt");
-
-  WindowWalker w(phaseImage);
-  for (w.init(); !w.ready(); w.next())
-    {
-      int hPhase = phaseImage.getPixel(w);
-      if (hPhase != 0)
+      string textureFN;
+      string phaseFN;
+      string calibFN;
+      fileNames(baseFileName, textureFN, phaseFN, calibFN);
+      ColorImage textureImage;
+      textureImage.read(textureFN);
+      Image phaseImage;
+      phaseImage.read(phaseFN);
+      if (display)
         {
-          Point uv(w);
-          double u2 = hPhase / phaseResolution;
-          Vector3d xyz;
-          reconstruct(para, uv, u2, xyz);
-          os << xyz.x << " " << xyz.y << " " << xyz.z << endl;
+          Show(ON, textureImage);
+          Show(GRAY, phaseImage);
+        }
+
+      vector<double> para;
+
+      if (calibFilename.empty())
+        {
+          FileName fn(calibFN);
+          if (!readCalib(calibFN, para))
+            {
+              vector<string> calFiles;
+              Directory(calFiles, fn.getPath() + "/*cal", DIR_FILE);
+              if (calFiles.empty())
+                throw IceException("Load calib", "No file found");
+              calibFN = fn.getPath() + "/" + calFiles[0];
+              readCalib(calibFN, para);
+            }
+        }
+      else
+        {
+          calibFN = calibFilename;
+          readCalib(calibFN, para);
+        }
+      if (verbose)
+        {
+          cout << "using parameter from " << calibFN << endl;
+          printPara(para);
+        }
+
+      // vorerst schreiben wir eine Datei von Punktkoordinaten
+      ofstream os("xyz.txt");
+
+      ImageD depth;
+      depth.create(phaseImage.xsize, phaseImage.ysize, -400, 400);
+      depth.set(0.0);
+      if (display)
+        {
+          Show(GRAY, depth, "depth");
+        }
+      WindowWalker w(phaseImage);
+      for (w.init(); !w.ready(); w.next())
+        {
+          int hPhase = phaseImage.getPixel(w);
+          if (hPhase != 0)
+            {
+              Point uv(w);
+              double u2 = hPhase / phaseResolution;
+              Vector3d xyz;
+              reconstruct(para, uv, u2, xyz);
+              depth.setPixel(w, xyz.z);
+              os << xyz.x << " " << xyz.y << " " << xyz.z << " ";
+              ColorValue cv = textureImage.getPixel(w);
+              os << cv.red << " " << cv. green << " " << cv.blue << endl;
+              cout << xyz << endl;
+            }
+        }
+      os.close();
+
+      if (display)
+        {
+          GetChar();
+          Show(OFF, depth);
         }
     }
-  os.close();
-
-
-
-
-  GetChar();
+  catch (const IceException& ex)
+    {
+      cerr << "Exception: " << ex.what() << endl;
+    }
   return OK;
 }

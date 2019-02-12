@@ -17,6 +17,7 @@ test.avi
 # ignore backups and temporary files
 *~
 *.orig
+*.del_cache
 depend
 
 # possibly incomplete positive pattern
