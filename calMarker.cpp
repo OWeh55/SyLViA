@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <image.h>
+#include "v23d.h"
 #include "v2polygon.h"
 #include "calibrate.h"
 
@@ -33,7 +34,7 @@ vector<Point> makePointList(const unsigned char* xy, double xPos, double yPos)
   return pl;
 }
 
-void drawReferences(const Image& img, const ObjectMatcher& om)
+void drawMatcherReferences(const Image& img, const ObjectMatcher& om)
 {
   vector<Point> pl1;
   vector<Point> pl2;
@@ -41,6 +42,53 @@ void drawReferences(const Image& img, const ObjectMatcher& om)
   for (int i = 0; i < pl1.size(); i++)
     {
       Line(pl1[i], pl2[i], 3, img);
+    }
+}
+
+void findSquares(Image& tls, Image& tMark,
+                 vector<Contur>& squares, double& sqSize)
+{
+  squares.clear();
+  vector<double> areas;
+  vector<Contur> pSquares;
+  IPoint start(0, 0);
+  while (SearchStart(tls, tMark, LocalSegObj, 123, 5, start) == OK)
+    {
+      Contur c = CalcContur(tls, tMark, LocalSegObj, 123, start);
+      if (c.isValid() && c.isClosed() && c.isHole())
+        {
+          double length, area, form, conv;
+          FeatureContur(c, length, area, form, conv);
+          //    Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
+          //     length, area, form, conv);
+          //    GetChar();
+          if (-area > 40 && -form < 1.50 && conv < 1.05)
+            {
+              // square (?)
+              MarkContur(c, 2, tMark);
+              pSquares.push_back(c);
+              areas.push_back(-area);
+            }
+          else
+            MarkContur(c, 1, tMark);
+        }
+      else
+        tMark.setPixel(start, 1);
+    }
+  if (pSquares.empty())
+    throw "no square found";
+
+  tMark.set(0);
+
+  sqSize = median(areas);
+
+  for (int i = 0; i < areas.size(); i++)
+    {
+      if (areas[i] > 0.5 * sqSize && areas[i] < 2 * sqSize)
+        {
+          FillRegion(pSquares[i], 3, tMark);
+          squares.push_back(pSquares[i]);
+        }
     }
 }
 
@@ -53,119 +101,39 @@ void findMarker(Image& tGray, Image& tMark,
     Show(OVERLAY, localSegImage);
   LocalSeg(tGray, localSegImage, localSegSize, localSegLevel);
 
+  double sqSize;
+  findSquares(localSegImage, tMark, squares, sqSize);
+
   IPoint start(0, 0);
-  squares.clear();
-  vector<double> areas;
+
   vector<Contur> conturs;
 
   while (SearchStart(localSegImage, tMark, LocalSegObj, 123, 5, start) == OK)
     {
       Contur c = CalcContur(localSegImage, tMark, LocalSegObj, 123, start);
 
-      if (c.isValid())
+      if (c.isValid() && c.isClosed() && !c.isHole())
         {
-          if (c.isClosed())                  // geschlossene Konturen füllen
+          FillRegion(c, 2, tMark);
+          double length, area, form, conv;
+          FeatureContur(c, length, area, form, conv);
+          if (debug & 6)
+            Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
+                   length, area, form, conv);
+          if (form > 4 && form < 5.5 &&
+              area > sqSize / 2 && area < sqSize * 2)
             {
-              if (!c.isHole())
-                {
-                  FillRegion(c, 2, tMark);
-                  double length, area, form, conv;
-                  FeatureContur(c, length, area, form, conv);
-                  if (debug & 6)
-                    Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
-                           length, area, form, conv);
-                  if (area > 40 && form < 6)
-                    {
-                      if (form < 1.50 && conv < 1.05)
-                        {
-                          FillRegion(c, 3, tMark); // quadrat
-                          squares.push_back(c);
-                          areas.push_back(area);
-                        }
-                      else if (form > 4 && form < 5.5)
-                        {
-                          FillRegion(c, 5, tMark);
-                          conturs.push_back(c);
-                        }
-                      if (debug & 4)
-                        GetChar();
-                    }
-                }
-              if (debug & 2)
-                GetChar();
+              FillRegion(c, 5, tMark);
+              conturs.push_back(c);
             }
-          MarkContur(c, 2, tMark);
+          else
+            FillRegion(c, 2, tMark);
+          if (debug & 4)
+            GetChar();
         }
-      else
-        tMark.setPixel(start, 2);
 
+      tMark.setPixel(start, 2);
     }
-  // analysis of squares
-  int nSquares = squares.size();
-  if (nSquares < 24)
-    throw "No / not enough squares found";
-  if (verbose)
-    cout << "squares: " << nSquares << endl;
-  sort(areas.begin(), areas.end());
-  double sqSize = areas[nSquares / 2];
-
-  // filter square conturs by size
-  // create new marker image for hole search
-  {
-    tMark.set(3);
-    vector<Contur> cSquares;
-    for (Contur& c : squares)
-      {
-        double length, area, form, conv;
-        FeatureContur(c, length, area, form, conv);
-        if (area > 0.7 * sqSize && area < 1.5 * sqSize)
-          {
-            cSquares.push_back(c);
-            FillRegion(c, 0, tMark);
-          }
-      }
-    //  squares=cSquares;
-  }
-
-  // search for holes in squares
-  squares.clear();
-  areas.clear();
-  start = IPoint(0, 0);
-  while (SearchStart(localSegImage, tMark, LocalSegObj, 123, 5, start) == OK)
-    {
-      Contur c = CalcContur(localSegImage, tMark, LocalSegObj, 123, start);
-      if (c.isValid())
-        {
-          if (c.isClosed())
-            {
-              if (c.isHole())
-                {
-                  // new square
-                  double length, area, form, conv;
-                  FeatureContur(c, length, area, form, conv);
-                  squares.push_back(c);
-                  areas.push_back(-area);
-                  FillRegion(c, 4, tMark);
-                }
-            }
-          MarkContur(c, 2, tMark);
-        }
-      else
-        tMark.setPixel(start, 2);
-    }
-
-  sort(areas.begin(), areas.end());
-  sqSize = areas[nSquares / 2];
-
-  nSquares = squares.size();
-  if (verbose)
-    {
-      cout << "reduced squares by size: " << nSquares << endl;
-      cout << "median size of squares: " << sqSize << endl;
-      cout << "candidates: " << conturs.size() << endl;
-    }
-  if (conturs.size() < 2)
-    throw "Less than two polygons found";
 
   //  ObjectMatcher omA(TRM_PROJECTIVE_NOR);
   ObjectMatcher omA(TRM_AFFINE_NOR);

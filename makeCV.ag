@@ -27,7 +27,6 @@ int main(int argc, char** argv)
   /*AppGen:MainEnd*/
   try
     {
-
       string textureFN;
       string phaseFN;
       string calibFN;
@@ -73,7 +72,7 @@ int main(int argc, char** argv)
 
       ImageD depth;
       depth.create(phaseImage.xsize, phaseImage.ysize, -400, 400);
-      depth.set(0.0);
+      depth.set(400.0);
       if (display)
         {
           Show(GRAY, depth, "depth");
@@ -92,7 +91,7 @@ int main(int argc, char** argv)
               os << xyz.x << " " << xyz.y << " " << xyz.z << " ";
               ColorValue cv = textureImage.getPixel(w);
               os << cv.red << " " << cv. green << " " << cv.blue << endl;
-              cout << xyz << endl;
+              //              cout << xyz << endl;
             }
         }
       os.close();

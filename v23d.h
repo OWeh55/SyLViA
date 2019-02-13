@@ -53,4 +53,11 @@ double findMaxAround(const vector<double>& dg, int is, int di);
 
 vector<double> dt(const vector<double>& v);
 
+template<typename T>
+T median(vector<T> v)
+{
+  sort(v.begin(), v.end());
+  return v[v.size() / 2];
+}
+
 #endif
