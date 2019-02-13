@@ -17,10 +17,16 @@ using namespace std;
 /*AppGen
   prog: Calibrate projector and camera
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
-  opt: p, phaseresolution, double, phaseResolution, Auflösung der Phase, 32.0
-  opt: d, display, void, display, Darstellung der Bilder, false
-  opt: D, debug, Void, debug, Debug-Information ausgeben, false
-  opt: v, verbose, Void, verbose, Viele Meldungen, false
+  opt: p, phaseresolution, double, phaseResolution, resolution of phase image, 32.0
+  opt: L, localsegsize, Int, localSegSize, window size for local segmentation, 11
+  opt: l, localseglevel, Int, localSegLevel, threshold for local segmentation, 15
+  opt: d, display, void, display, show images, false
+  opt: D, debug, Int, debug, output debug information (bitmask), 0
+  opt2:  1  result of local segmentation
+  opt2:  2  features of all conturs
+  opt2:  4  features of preselected conturs
+  opt: v, verbose, Void, verbose, be verbose, false
+  opt: h, help, usage, usage, Help, false
 AppGen*/
 
 /*AppGen:Main*/

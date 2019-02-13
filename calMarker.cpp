@@ -49,7 +49,9 @@ void findMarker(Image& tGray, Image& tMark,
 {
   Image localSegImage;
   localSegImage.create(tMark);
-  LocalSeg(tGray, localSegImage, 15, 25);
+  if (debug & 1)
+    Show(OVERLAY, localSegImage);
+  LocalSeg(tGray, localSegImage, localSegSize, localSegLevel);
 
   IPoint start(0, 0);
   squares.clear();
@@ -69,29 +71,34 @@ void findMarker(Image& tGray, Image& tMark,
                   FillRegion(c, 2, tMark);
                   double length, area, form, conv;
                   FeatureContur(c, length, area, form, conv);
-                  if (area > 50 && form < 6)
+                  if (debug & 6)
+                    Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
+                           length, area, form, conv);
+                  if (area > 40 && form < 6)
                     {
-                      //Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
-                      //     length, area, form, conv);
                       if (form < 1.50 && conv < 1.05)
                         {
                           FillRegion(c, 3, tMark); // quadrat
                           squares.push_back(c);
                           areas.push_back(area);
                         }
-                      else if (form > 4 && form < 5)
+                      else if (form > 4 && form < 5.5)
                         {
                           FillRegion(c, 5, tMark);
                           conturs.push_back(c);
                         }
-                      //          GetChar();
+                      if (debug & 4)
+                        GetChar();
                     }
                 }
+              if (debug & 2)
+                GetChar();
             }
           MarkContur(c, 2, tMark);
         }
       else
         tMark.setPixel(start, 2);
+
     }
   // analysis of squares
   int nSquares = squares.size();
@@ -101,9 +108,60 @@ void findMarker(Image& tGray, Image& tMark,
     cout << "squares: " << nSquares << endl;
   sort(areas.begin(), areas.end());
   double sqSize = areas[nSquares / 2];
+
+  // filter square conturs by size
+  // create new marker image for hole search
+  {
+    tMark.set(3);
+    vector<Contur> cSquares;
+    for (Contur& c : squares)
+      {
+        double length, area, form, conv;
+        FeatureContur(c, length, area, form, conv);
+        if (area > 0.7 * sqSize && area < 1.5 * sqSize)
+          {
+            cSquares.push_back(c);
+            FillRegion(c, 0, tMark);
+          }
+      }
+    //  squares=cSquares;
+  }
+
+  // search for holes in squares
+  squares.clear();
+  areas.clear();
+  start = IPoint(0, 0);
+  while (SearchStart(localSegImage, tMark, LocalSegObj, 123, 5, start) == OK)
+    {
+      Contur c = CalcContur(localSegImage, tMark, LocalSegObj, 123, start);
+      if (c.isValid())
+        {
+          if (c.isClosed())
+            {
+              if (c.isHole())
+                {
+                  // new square
+                  double length, area, form, conv;
+                  FeatureContur(c, length, area, form, conv);
+                  squares.push_back(c);
+                  areas.push_back(-area);
+                  FillRegion(c, 4, tMark);
+                }
+            }
+          MarkContur(c, 2, tMark);
+        }
+      else
+        tMark.setPixel(start, 2);
+    }
+
+  sort(areas.begin(), areas.end());
+  sqSize = areas[nSquares / 2];
+
+  nSquares = squares.size();
   if (verbose)
     {
-      cout << "median size: " << sqSize << endl;
+      cout << "reduced squares by size: " << nSquares << endl;
+      cout << "median size of squares: " << sqSize << endl;
       cout << "candidates: " << conturs.size() << endl;
     }
   if (conturs.size() < 2)
@@ -123,11 +181,14 @@ void findMarker(Image& tGray, Image& tMark,
   double minDistB = numeric_limits<double>::max();
   Contur A;
   Contur B;
+  bool hasA = false;
+  bool hasB = false;
   for (auto& c : conturs)
     {
       double length, area, form, conv;
       FeatureContur(c, length, area, form, conv);
-      if (area > sqSize && area < sqSize * 2)
+      // cout << area << " ? " << sqSize << endl;
+      if (area > sqSize / 2 && area < sqSize * 2)
         {
           omA.setObject(1, c);
           omA.interpolObject(1, 0.1);
@@ -136,6 +197,7 @@ void findMarker(Image& tGray, Image& tMark,
             {
               minDistA = da;
               A = c;
+              hasA = true;
             }
           omB.setObject(1, c);
           omB.interpolObject(1, 0.1);
@@ -144,11 +206,21 @@ void findMarker(Image& tGray, Image& tMark,
             {
               minDistB = db;
               B = c;
+              hasB = true;
             }
         }
     }
+  if (A.Start() == B.Start())
+    throw IceException("findMarker", "only one polygon found");
+  if (!hasA || !hasB)
+    throw IceException("findMarker", "polygons not found");
+  // clear all green markes
+  WindowWalker w(tMark);
+  for (w.init(); !w.ready(); w.next())
+    if (tMark.getPixel(w) == 2)
+      tMark.setPixel(w, 0);
   FillRegion(A, 1, tMark);
-  FillRegion(B, 5, tMark);
+  FillRegion(B, 1, tMark);
   // reinitialize omA with Contur A
   omA.setObject(1, A);
   omA.interpolObject(1, 0.1);
@@ -187,4 +259,9 @@ void findMarker(Image& tGray, Image& tMark,
         //        cout << p << " -> " << pp << endl;
         Marker(1, pp, 5, 7, tMark);
       }
+  if (debug & 1)
+    {
+      GetChar();
+      Show(OFF, localSegImage);
+    }
 }

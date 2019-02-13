@@ -7,5 +7,9 @@ void findMarker(Image& tGray, Image& tMark,
 constexpr double rasterMM = 22.4;
 
 extern bool verbose;
+extern int debug;
+
+extern int localSegSize;
+extern int localSegLevel;
 
 #endif
