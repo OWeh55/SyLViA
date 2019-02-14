@@ -27,7 +27,7 @@ ifndef NOFFTW3
 LIBS := $(LIBS) -lfftw3 
 endif
 
-all: v23d patterngen calibrationPattern calibrate makeCV
+all: v23d patterngen genCalib calibrate makeCV
 
 v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o v23d v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(LIBS)
