@@ -88,7 +88,8 @@ int main(int argc, char** argv)
               Vector3d xyz;
               reconstruct(para, uv, u2, xyz);
               depth.setPixel(w, xyz.z);
-              os << xyz.x << " " << xyz.y << " " << xyz.z << " ";
+	      // we invert y to get a right handed system
+              os << xyz.x << " " << -xyz.y << " " << xyz.z << " ";
               ColorValue cv = textureImage.getPixel(w);
               os << cv.red << " " << cv. green << " " << cv.blue << endl;
               //              cout << xyz << endl;

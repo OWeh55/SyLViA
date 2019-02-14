@@ -23,11 +23,36 @@ using namespace std;
   opt: d, display, void, display, show images, false
   opt: D, debug, Int, debug, output debug information (bitmask), 0
   opt2:  1  result of local segmentation
-  opt2:  2  features of all conturs
+  opt2:  2  found squares
   opt2:  4  features of preselected conturs
   opt: v, verbose, Void, verbose, be verbose, false
   opt: h, help, usage, usage, Help, false
 AppGen*/
+
+double getCenterPhase(const Image &phase,const Contur &c)
+{
+  Point centroid = Centroid(c);
+  RegionWalker w(c);
+  Polynom2d1o fn;
+  fn.FitInit();
+  for (w.init();!w.ready();w.next())
+    {
+      double phaseD = phase.getPixel(w);
+      if (phaseD != 0.0)
+	fn.FitVal(w,phaseD);
+      
+    }
+  try {
+    fn.FitFinish();
+    return fn(centroid);
+  }
+  catch(const IceException &ex)
+    {
+      // fit finish fails if not enough values teached
+      // we ignore this and return 0.0
+    }
+  return 0.0;
+}
 
 /*AppGen:Main*/
 int main(int argc, char** argv)
@@ -115,11 +140,12 @@ int main(int argc, char** argv)
             if (dmin < 0.3 * rasterMM)
               {
                 // marker found
-                int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
-                if (phaseI > 0) // phase valid?
+		double phaseD = getCenterPhase(phase,squares[minIdx]);
+                //int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
+                if (phaseD > 0) // phase valid?
                   {
                     uv.push_back(squarePos[minIdx]);
-                    u2.push_back(phaseI / phaseResolution);
+                    u2.push_back(phaseD / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, 0));
                     Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 1, DEFAULT, tMark);
                   }
@@ -148,11 +174,12 @@ int main(int argc, char** argv)
             if (dmin < 0.3 * rasterMM)
               {
                 // marker found
-                int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
-                if (phaseI > 0) // phase valid?
+		double phaseD = getCenterPhase(phase,squares[minIdx]);
+		// int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
+                if (phaseD > 0) // phase valid?
                   {
                     uv.push_back(squarePos[minIdx]);
-                    u2.push_back(phaseI / phaseResolution);
+                    u2.push_back(phaseD / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, deltaZ));
                     Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 2, DEFAULT, tMark);
                   }

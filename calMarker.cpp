@@ -104,6 +104,10 @@ void findMarker(Image& tGray, Image& tMark,
   double sqSize;
   findSquares(localSegImage, tMark, squares, sqSize);
 
+  if (debug & 2)
+    {
+      GetChar();
+    }
   IPoint start(0, 0);
 
   vector<Contur> conturs;
