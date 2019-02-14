@@ -29,24 +29,25 @@ using namespace std;
   opt: h, help, usage, usage, Help, false
 AppGen*/
 
-double getCenterPhase(const Image &phase,const Contur &c)
+double getCenterPhase(const Image& phase, const Contur& c)
 {
   Point centroid = Centroid(c);
   RegionWalker w(c);
   Polynom2d1o fn;
   fn.FitInit();
-  for (w.init();!w.ready();w.next())
+  for (w.init(); !w.ready(); w.next())
     {
       double phaseD = phase.getPixel(w);
       if (phaseD != 0.0)
-	fn.FitVal(w,phaseD);
-      
+        fn.FitVal(w, phaseD);
+
     }
-  try {
-    fn.FitFinish();
-    return fn(centroid);
-  }
-  catch(const IceException &ex)
+  try
+    {
+      fn.FitFinish();
+      return fn(centroid);
+    }
+  catch (const IceException& ex)
     {
       // fit finish fails if not enough values teached
       // we ignore this and return 0.0
@@ -140,7 +141,7 @@ int main(int argc, char** argv)
             if (dmin < 0.3 * rasterMM)
               {
                 // marker found
-		double phaseD = getCenterPhase(phase,squares[minIdx]);
+                double phaseD = getCenterPhase(phase, squares[minIdx]);
                 //int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
                 if (phaseD > 0) // phase valid?
                   {
@@ -174,8 +175,8 @@ int main(int argc, char** argv)
             if (dmin < 0.3 * rasterMM)
               {
                 // marker found
-		double phaseD = getCenterPhase(phase,squares[minIdx]);
-		// int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
+                double phaseD = getCenterPhase(phase, squares[minIdx]);
+                // int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
                 if (phaseD > 0) // phase valid?
                   {
                     uv.push_back(squarePos[minIdx]);
