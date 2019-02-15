@@ -16,11 +16,53 @@ using namespace std;
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
   opt: c, calibfile, string, calibFilename, Name of calibration file,""
   opt: p, phaseresolution, double, phaseResolution, Resolution of phase image, 32.0
+  opt: x, xmin, double, xMin, minimum x, -10000
+  opt: X, xmax, double, xMax, maximum x, 10000
+  opt: y, ymin, double, yMin, minimum y, -10000
+  opt: Y, ymax, double, yMax, maximum y, 10000
+  opt: z, zmin, double, zMin, minimum z, -10000
+  opt: Z, zmax, double, zMax, maximum z, 10000
   opt: d, display, void, display, display images, false
   opt: D, debug, Void, debug, print debug information, false
   opt: v, verbose, Void, verbose, be verbose, false
 AppGen*/
 
+bool inRange(const Vector3d& xyz,
+             double xMin, double xMax,
+             double yMin, double yMax,
+             double zMin, double zMax)
+{
+  return
+    xyz.x >= xMin && xyz.x <= xMax &&
+    xyz.y >= yMin && xyz.y <= yMax &&
+    xyz.z >= zMin && xyz.z <= zMax;
+}
+
+void writeTriangle(ostream& os,
+                   IPoint p1, IPoint p2, IPoint p3,
+                   const Image& numberImage,
+                   const ColorImage& textureImage)
+{
+  if (numberImage.inside(p1) &&
+      numberImage.inside(p2) &&
+      numberImage.inside(p3))
+    {
+      int n1 = numberImage.getPixel(p1) - 1;
+      int n2 = numberImage.getPixel(p2) - 1;
+      int n3 = numberImage.getPixel(p3) - 1;
+      if (n1 >= 0 && n2 >= 0 && n3 >= 0)
+        {
+          ColorValue c1 = textureImage.getPixel(p1);
+          ColorValue c2 = textureImage.getPixel(p2);
+          ColorValue c3 = textureImage.getPixel(p3);
+          ColorValue cc = (c1 + c2 + c3) * 0.3333;
+          os << "C " << (double)cc.red / textureImage.maxval;
+          os << " " << (double)cc.green / textureImage.maxval;
+          os << " " << (double)cc.blue / textureImage.maxval << endl;
+          os << "T " << n1 << " " << n2 << " " << n3 << endl;
+        }
+    }
+}
 /*AppGen:Main*/
 int main(int argc, char** argv)
 {
@@ -35,6 +77,10 @@ int main(int argc, char** argv)
       textureImage.read(textureFN);
       Image phaseImage;
       phaseImage.read(phaseFN);
+      int xSize = textureImage.xsize;
+      int ySize = textureImage.ysize;
+      if (phaseImage.xsize != xSize || phaseImage.ysize != ySize)
+        throw IceException("read files", "image sizes differ");
       if (display)
         {
           Show(ON, textureImage);
@@ -67,17 +113,33 @@ int main(int argc, char** argv)
           printPara(para);
         }
 
-      // vorerst schreiben wir eine Datei von Punktkoordinaten
-      ofstream os("xyz.txt");
+      // file for triangle viewer
+      ofstream os("xyz.tv");
 
       ImageD depth;
-      depth.create(phaseImage.xsize, phaseImage.ysize, -400, 400);
+      depth.create(xSize, ySize, -400, 400);
       depth.set(400.0);
+
       if (display)
         {
           Show(GRAY, depth, "depth");
         }
+
+      Image mark;
+      mark.create(xSize, ySize, 16);
+      mark.set(0);
+      if (display)
+        {
+          Show(OVERLAY, mark, "selected");
+        }
+
       WindowWalker w(phaseImage);
+      // we collect all valid points (with phase) and number
+      // them. No more than xSize*ySize points + reserve
+      Image numberImage;
+      numberImage.create(xSize, ySize, xSize * ySize + 20);
+      numberImage.set(numberImage.maxval);
+      int pNumber = 0;
       for (w.init(); !w.ready(); w.next())
         {
           int hPhase = phaseImage.getPixel(w);
@@ -88,12 +150,30 @@ int main(int argc, char** argv)
               Vector3d xyz;
               reconstruct(para, uv, u2, xyz);
               depth.setPixel(w, xyz.z);
-              // we invert y to get a right handed system
-              os << xyz.x << " " << -xyz.y << " " << xyz.z << " ";
-              ColorValue cv = textureImage.getPixel(w);
-              os << cv.red << " " << cv. green << " " << cv.blue << endl;
-              //              cout << xyz << endl;
+              if (inRange(xyz, xMin, xMax, yMin, yMax, zMin, zMax))
+                {
+                  numberImage.setPixel(w, pNumber + 1);
+                  pNumber++;
+                  // we invert y to get a right handed system
+                  os << "P " << xyz.x << " " << -xyz.y << " " << xyz.z << endl;
+                }
+              else
+                mark.setPixel(w, 2);
             }
+          else
+            mark.setPixel(w, 1);
+        }
+      IPoint dx(1, 0);
+      IPoint dy(0, 1);
+
+      for (w.init(); !w.ready(); w.next())
+        {
+          writeTriangle(os,
+                        w, w + dx, w + dy,
+                        numberImage, textureImage);
+          writeTriangle(os,
+                        w + dy, w + dx, w + dx + dy,
+                        numberImage, textureImage);
         }
       os.close();
 
