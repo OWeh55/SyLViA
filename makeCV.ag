@@ -24,6 +24,7 @@ using namespace std;
   opt: Z, zmax, double, zMax, maximum z, 10000
   opt: l, maxlength, double, maxLength, maximum length of triangle edges, 1000
 
+  opt: s, smear, int, sSize, Size for averaging, 0
   opt: n, nocolor, void, noColor, Ignore texture, false
 
   opt: d, display, void, display, display images, false
@@ -185,13 +186,9 @@ int main(int argc, char** argv)
       ColorValue maxVal(0);
 
       WindowWalker w(phaseImage);
-      // we collect all valid points (with phase) and number
-      // them. No more than xSize*ySize points + reserve
-      matrix<int> numbers(xSize, ySize);
-      numbers.set(0.0);
+      // calculate coordinates if phase is valid
       matrix<Vector3d> xyzs(xSize, ySize);
       xyzs.set(Vector3d(0, 0, 0));
-      int pNumber = 0;
       for (w.init(); !w.ready(); w.next())
         {
           int hPhase = phaseImage.getPixel(w);
@@ -203,21 +200,58 @@ int main(int argc, char** argv)
               reconstruct(para, uv, u2, xyz);
               xyzs[w.x][w.y] = xyz;
               depth.setPixel(w, xyz.z);
-              if (selectBox.inRange(xyz))
-                {
-                  numbers[w.x][w.y] = pNumber + 1;
-                  pNumber++;
-                  // determine max colorvalue of selected pixels
-                  ColorValue c = textureImage.getPixel(w);
-                  maxColorValue(maxVal, c);
-                  // we invert y to get a right handed system
-                  os << "P " << xyz.x << " " << -xyz.y << " " << xyz.z << endl;
-                }
-              else
-                mark.setPixel(w, 2);
             }
           else
             mark.setPixel(w, 1);
+        }
+
+      // "low pass" xyz (test)
+      if (sSize > 0)
+        {
+          matrix<Vector3d> newXyz(xSize, ySize);
+          for (int y = sSize; y < ySize - sSize; y++)
+            for (int x = sSize; x < xSize - sSize; x++)
+              {
+                Vector3d xyzSum(0, 0, 0);
+                int vCount = 0;
+                for (int dy = -sSize; dy <= sSize; dy++)
+                  {
+                    int yi = y + dy;
+                    for (int dx = -sSize; dx <= sSize; dx++)
+                      {
+                        int xi = x + dx;
+                        if (mark.getPixel(xi, yi) == 0)
+                          {
+                            xyzSum += xyzs[x][y];
+                            vCount++;
+                          }
+                      }
+                  }
+                if (vCount > 0)
+                  newXyz[x][y] = xyzSum / vCount;
+              }
+          xyzs = newXyz;
+        }
+
+      // write valid and selected points to 3d file
+      matrix<int> numbers(xSize, ySize);
+      numbers.set(0);
+      int pNumber = 0;
+      for (w.init(); !w.ready(); w.next())
+        {
+          Vector3d xyz = xyzs[w.x][w.y];
+          if (selectBox.inRange(xyz))
+            {
+              numbers[w.x][w.y] = pNumber + 1;
+              pNumber++;
+              // determine max colorvalue of selected pixels
+              ColorValue c = textureImage.getPixel(w);
+              maxColorValue(maxVal, c);
+              // we invert y to get a right handed system
+              os << "P " << xyz.x << " " << -xyz.y << " " << xyz.z << endl;
+            }
+          else
+            mark.setPixel(w, 2);
         }
 
       IPoint dx(1, 0);
