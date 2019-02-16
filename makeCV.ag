@@ -55,17 +55,17 @@ private:
 
 void writeTriangle(ostream& os,
                    IPoint p1, IPoint p2, IPoint p3,
-                   const Image& numberImage,
+                   const matrix<int>& numbers,
                    const ColorImage& textureImage,
                    const ColorValue& maxVal)
 {
-  if (numberImage.inside(p1) &&
-      numberImage.inside(p2) &&
-      numberImage.inside(p3))
+  if (textureImage.inside(p1) &&
+      textureImage.inside(p2) &&
+      textureImage.inside(p3))
     {
-      int n1 = numberImage.getPixel(p1) - 1;
-      int n2 = numberImage.getPixel(p2) - 1;
-      int n3 = numberImage.getPixel(p3) - 1;
+      int n1 = numbers[p1.x][p1.y] - 1;
+      int n2 = numbers[p2.x][p2.y] - 1;
+      int n3 =  numbers[p3.x][p3.y] - 1;
       if (n1 >= 0 && n2 >= 0 && n3 >= 0)
         {
           ColorValue c1 = textureImage.getPixel(p1);
@@ -78,6 +78,16 @@ void writeTriangle(ostream& os,
           os << "T " << n1 << " " << n2 << " " << n3 << endl;
         }
     }
+}
+
+void maxColorValue(ColorValue& maxVal, const ColorValue& c)
+{
+  if (c.red > maxVal.red)
+    maxVal.red = c.red;
+  if (c.green > maxVal.green)
+    maxVal.green = c.green;
+  if (c.blue > maxVal.blue)
+    maxVal.blue = c.blue;
 }
 
 /*AppGen:Main*/
@@ -156,9 +166,10 @@ int main(int argc, char** argv)
       WindowWalker w(phaseImage);
       // we collect all valid points (with phase) and number
       // them. No more than xSize*ySize points + reserve
-      Image numberImage;
-      numberImage.create(xSize, ySize, xSize * ySize + 20);
-      numberImage.set(0);
+      matrix<int> numbers(xSize, ySize);
+      numbers.set(0.0);
+      matrix<Vector3d> xyzs(xSize, ySize);
+      xyzs.set(Vector3d(0, 0, 0));
       int pNumber = 0;
       for (w.init(); !w.ready(); w.next())
         {
@@ -169,16 +180,15 @@ int main(int argc, char** argv)
               double u2 = hPhase / phaseResolution;
               Vector3d xyz;
               reconstruct(para, uv, u2, xyz);
+              xyzs[w.x][w.y] = xyz;
               depth.setPixel(w, xyz.z);
               if (selectBox.inRange(xyz))
                 {
-                  numberImage.setPixel(w, pNumber + 1);
+                  numbers[w.x][w.y] = pNumber + 1;
                   pNumber++;
-                  // determine max colorvalue of seleted pixels
+                  // determine max colorvalue of selected pixels
                   ColorValue c = textureImage.getPixel(w);
-                  if (c.red > maxVal.red) maxVal.red = c.red;
-                  if (c.green > maxVal.green) maxVal.green = c.green;
-                  if (c.blue > maxVal.blue) maxVal.blue = c.blue;
+                  maxColorValue(maxVal, c);
                   // we invert y to get a right handed system
                   os << "P " << xyz.x << " " << -xyz.y << " " << xyz.z << endl;
                 }
@@ -188,6 +198,7 @@ int main(int argc, char** argv)
           else
             mark.setPixel(w, 1);
         }
+
       IPoint dx(1, 0);
       IPoint dy(0, 1);
 
@@ -195,10 +206,10 @@ int main(int argc, char** argv)
         {
           writeTriangle(os,
                         w, w + dx, w + dy,
-                        numberImage, textureImage, maxVal);
+                        numbers, textureImage, maxVal);
           writeTriangle(os,
                         w + dy, w + dx, w + dx + dy,
-                        numberImage, textureImage, maxVal);
+                        numbers, textureImage, maxVal);
         }
       os.close();
 
