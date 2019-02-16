@@ -22,6 +22,10 @@ using namespace std;
   opt: Y, ymax, double, yMax, maximum y, 10000
   opt: z, zmin, double, zMin, minimum z, -10000
   opt: Z, zmax, double, zMax, maximum z, 10000
+  opt: l, maxlength, double, maxLength, maximum length of triangle edges, 1000
+
+  opt: n, nocolor, void, noColor, Ignore texture, false
+
   opt: d, display, void, display, display images, false
   opt: D, debug, Void, debug, print debug information, false
   opt: v, verbose, Void, verbose, be verbose, false
@@ -57,7 +61,10 @@ void writeTriangle(ostream& os,
                    IPoint p1, IPoint p2, IPoint p3,
                    const matrix<int>& numbers,
                    const ColorImage& textureImage,
-                   const ColorValue& maxVal)
+                   const matrix<Vector3d>& xyzs,
+                   const ColorValue& maxVal,
+                   double maxLength,
+                   bool ignoreColor)
 {
   if (textureImage.inside(p1) &&
       textureImage.inside(p2) &&
@@ -68,14 +75,28 @@ void writeTriangle(ostream& os,
       int n3 =  numbers[p3.x][p3.y] - 1;
       if (n1 >= 0 && n2 >= 0 && n3 >= 0)
         {
-          ColorValue c1 = textureImage.getPixel(p1);
-          ColorValue c2 = textureImage.getPixel(p2);
-          ColorValue c3 = textureImage.getPixel(p3);
-          ColorValue cc = (c1 + c2 + c3) * 0.3333;
-          os << "C " << (double)cc.red / maxVal.red;
-          os << " " << (double)cc.green / maxVal.green;
-          os << " " << (double)cc.blue / maxVal.blue << endl;
-          os << "T " << n1 << " " << n2 << " " << n3 << endl;
+          // second selection criteria: max edge length
+          Vector3d xyz1 = xyzs[p1.x][p1.y];
+          Vector3d xyz2 = xyzs[p2.x][p2.y];
+          Vector3d xyz3 = xyzs[p3.x][p3.y];
+          if (
+            (xyz1 - xyz2).length() < maxLength &&
+            (xyz2 - xyz3).length() < maxLength &&
+            (xyz3 - xyz1).length() < maxLength
+          )
+            {
+              if (!ignoreColor)
+                {
+                  ColorValue c1 = textureImage.getPixel(p1);
+                  ColorValue c2 = textureImage.getPixel(p2);
+                  ColorValue c3 = textureImage.getPixel(p3);
+                  ColorValue cc = (c1 + c2 + c3) * 0.3333;
+                  os << "C " << (double)cc.red / maxVal.red;
+                  os << " " << (double)cc.green / maxVal.green;
+                  os << " " << (double)cc.blue / maxVal.blue << endl;
+                }
+              os << "T " << n1 << " " << n2 << " " << n3 << endl;
+            }
         }
     }
 }
@@ -206,10 +227,16 @@ int main(int argc, char** argv)
         {
           writeTriangle(os,
                         w, w + dx, w + dy,
-                        numbers, textureImage, maxVal);
+                        numbers, textureImage, xyzs,
+                        maxVal,
+                        maxLength,
+                        noColor);
           writeTriangle(os,
                         w + dy, w + dx, w + dx + dy,
-                        numbers, textureImage, maxVal);
+                        numbers, textureImage, xyzs,
+                        maxVal,
+                        maxLength,
+                        noColor);
         }
       os.close();
 
