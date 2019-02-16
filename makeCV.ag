@@ -27,21 +27,37 @@ using namespace std;
   opt: v, verbose, Void, verbose, be verbose, false
 AppGen*/
 
-bool inRange(const Vector3d& xyz,
-             double xMin, double xMax,
-             double yMin, double yMax,
-             double zMin, double zMax)
+class sBox
 {
-  return
-    xyz.x >= xMin && xyz.x <= xMax &&
-    xyz.y >= yMin && xyz.y <= yMax &&
-    xyz.z >= zMin && xyz.z <= zMax;
-}
+public:
+  sBox(double xMin, double xMax,
+       double yMin, double yMax,
+       double zMin, double zMax):
+    xMin(xMin), xMax(xMax),
+    yMin(yMin), yMax(yMax),
+    zMin(zMin), zMax(zMax)
+  {
+  };
+  bool inRange(const Vector3d& xyz)
+  {
+    return  xyz.x >= xMin && xyz.x <= xMax &&
+            xyz.y >= yMin && xyz.y <= yMax &&
+            xyz.z >= zMin && xyz.z <= zMax;
+  }
+private:
+  double xMin;
+  double xMax;
+  double yMin;
+  double yMax;
+  double zMin;
+  double zMax;
+};
 
 void writeTriangle(ostream& os,
                    IPoint p1, IPoint p2, IPoint p3,
                    const Image& numberImage,
-                   const ColorImage& textureImage)
+                   const ColorImage& textureImage,
+                   const ColorValue& maxVal)
 {
   if (numberImage.inside(p1) &&
       numberImage.inside(p2) &&
@@ -56,19 +72,21 @@ void writeTriangle(ostream& os,
           ColorValue c2 = textureImage.getPixel(p2);
           ColorValue c3 = textureImage.getPixel(p3);
           ColorValue cc = (c1 + c2 + c3) * 0.3333;
-          os << "C " << (double)cc.red / textureImage.maxval;
-          os << " " << (double)cc.green / textureImage.maxval;
-          os << " " << (double)cc.blue / textureImage.maxval << endl;
+          os << "C " << (double)cc.red / maxVal.red;
+          os << " " << (double)cc.green / maxVal.green;
+          os << " " << (double)cc.blue / maxVal.blue << endl;
           os << "T " << n1 << " " << n2 << " " << n3 << endl;
         }
     }
 }
+
 /*AppGen:Main*/
 int main(int argc, char** argv)
 {
   /*AppGen:MainEnd*/
   try
     {
+      sBox selectBox(xMin, xMax, yMin, yMax, zMin, zMax);
       string textureFN;
       string phaseFN;
       string calibFN;
@@ -133,12 +151,14 @@ int main(int argc, char** argv)
           Show(OVERLAY, mark, "selected");
         }
 
+      ColorValue maxVal(0);
+
       WindowWalker w(phaseImage);
       // we collect all valid points (with phase) and number
       // them. No more than xSize*ySize points + reserve
       Image numberImage;
       numberImage.create(xSize, ySize, xSize * ySize + 20);
-      numberImage.set(numberImage.maxval);
+      numberImage.set(0);
       int pNumber = 0;
       for (w.init(); !w.ready(); w.next())
         {
@@ -150,10 +170,15 @@ int main(int argc, char** argv)
               Vector3d xyz;
               reconstruct(para, uv, u2, xyz);
               depth.setPixel(w, xyz.z);
-              if (inRange(xyz, xMin, xMax, yMin, yMax, zMin, zMax))
+              if (selectBox.inRange(xyz))
                 {
                   numberImage.setPixel(w, pNumber + 1);
                   pNumber++;
+                  // determine max colorvalue of seleted pixels
+                  ColorValue c = textureImage.getPixel(w);
+                  if (c.red > maxVal.red) maxVal.red = c.red;
+                  if (c.green > maxVal.green) maxVal.green = c.green;
+                  if (c.blue > maxVal.blue) maxVal.blue = c.blue;
                   // we invert y to get a right handed system
                   os << "P " << xyz.x << " " << -xyz.y << " " << xyz.z << endl;
                 }
@@ -170,10 +195,10 @@ int main(int argc, char** argv)
         {
           writeTriangle(os,
                         w, w + dx, w + dy,
-                        numberImage, textureImage);
+                        numberImage, textureImage, maxVal);
           writeTriangle(os,
                         w + dy, w + dx, w + dx + dy,
-                        numberImage, textureImage);
+                        numberImage, textureImage, maxVal);
         }
       os.close();
 
