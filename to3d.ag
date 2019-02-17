@@ -32,6 +32,26 @@ using namespace std;
   opt: v, verbose, Void, verbose, be verbose, false
 AppGen*/
 
+// class that contains all 3d data (of pointcloud level)
+// does not contain u,v that are implizit in array idx
+// at the moment more or less a struct
+class SPixel
+{
+public:
+  SPixel():
+    color(0), phase(0), position(0, 0, 0), valid(false), selected(false), nr(-1)
+  {
+  }
+  ColorValue color;
+  double phase;
+  Vector3d position;
+  bool valid;
+  bool selected;
+  int nr;
+};
+
+typedef matrix<SPixel> SWorld;
+
 class sBox
 {
 public:
@@ -58,48 +78,52 @@ private:
   double zMax;
 };
 
-void writeTriangle(ostream& os,
-                   IPoint p1, IPoint p2, IPoint p3,
-                   const matrix<int>& numbers,
-                   const ColorImage& textureImage,
-                   const matrix<Vector3d>& xyzs,
-                   const ColorValue& maxVal,
-                   double maxLength,
-                   bool ignoreColor)
+void compute3d(SWorld& world, const vector<double>& para)
 {
-  if (textureImage.inside(p1) &&
-      textureImage.inside(p2) &&
-      textureImage.inside(p3))
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      {
+        SPixel& here = world[x][y];
+        if (here.phase != 0.0)
+          {
+            Point uv(x, y);
+            reconstruct(para, uv, here.phase, here.position);
+            here.valid = true;
+          }
+        else
+          here.valid = false;
+      }
+}
+
+void updateState(const SWorld& world, Image& state)
+{
+  WindowWalker w(state);
+  for (w.init(); !w.ready(); w.next())
     {
-      int n1 = numbers[p1.x][p1.y] - 1;
-      int n2 = numbers[p2.x][p2.y] - 1;
-      int n3 =  numbers[p3.x][p3.y] - 1;
-      if (n1 >= 0 && n2 >= 0 && n3 >= 0)
-        {
-          // second selection criteria: max edge length
-          Vector3d xyz1 = xyzs[p1.x][p1.y];
-          Vector3d xyz2 = xyzs[p2.x][p2.y];
-          Vector3d xyz3 = xyzs[p3.x][p3.y];
-          if (
-            (xyz1 - xyz2).length() < maxLength &&
-            (xyz2 - xyz3).length() < maxLength &&
-            (xyz3 - xyz1).length() < maxLength
-          )
-            {
-              if (!ignoreColor)
-                {
-                  ColorValue c1 = textureImage.getPixel(p1);
-                  ColorValue c2 = textureImage.getPixel(p2);
-                  ColorValue c3 = textureImage.getPixel(p3);
-                  ColorValue cc = (c1 + c2 + c3) * 0.3333;
-                  os << "C " << (double)cc.red / maxVal.red;
-                  os << " " << (double)cc.green / maxVal.green;
-                  os << " " << (double)cc.blue / maxVal.blue << endl;
-                }
-              os << "T " << n1 << " " << n2 << " " << n3 << endl;
-            }
-        }
+      const SPixel& here = world[w.x][w.y];
+      int s = 0;
+      if (!here.valid)
+        s += 1;
+      if (!here.selected)
+        s += 2;
+      state.setPixel(w, s);
     }
+}
+
+void selectBoxPixel(SWorld& world, sBox& box)
+{
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      {
+        SPixel& here = world[x][y];
+        here.selected = box.inRange(here.position);
+      }
 }
 
 void maxColorValue(ColorValue& maxVal, const ColorValue& c)
@@ -112,6 +136,129 @@ void maxColorValue(ColorValue& maxVal, const ColorValue& c)
     maxVal.blue = c.blue;
 }
 
+ColorValue getMaxColorValue(const SWorld& world)
+{
+  ColorValue maxColor(0, 0, 0);
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      {
+        const SPixel& here = world[x][y];
+        maxColorValue(maxColor, here.color);
+      }
+  return maxColor;
+}
+
+void smear(SWorld& world, int sSize)
+{
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  matrix<Vector3d> newXyz(xSize, ySize);
+  newXyz.set(Vector3d(0, 0, 0));
+
+  for (int y = sSize; y < ySize - sSize; y++)
+    for (int x = sSize; x < xSize - sSize; x++)
+      {
+        Vector3d xyzSum(0, 0, 0);
+        int vCount = 0;
+        for (int dy = -sSize; dy <= sSize; dy++)
+          {
+            int yi = y + dy;
+            for (int dx = -sSize; dx <= sSize; dx++)
+              {
+                int xi = x + dx;
+                const SPixel& here = world[xi][yi];
+                if (here.valid)
+                  {
+                    xyzSum += here.position;
+                    vCount++;
+                  }
+              }
+          }
+        if (vCount > 0)
+          newXyz[x][y] = xyzSum / vCount;
+      }
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      world[x][y].position = newXyz[x][y];
+}
+
+void numberValidAndSelectedPixel(SWorld& world)
+{
+  int nr = 0;
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      {
+        if (world[x][y].valid && world[x][y].selected)
+          {
+            world[x][y].nr = nr;
+            nr++;
+          }
+      }
+}
+
+void writePoints(ofstream& os, const SWorld& world)
+{
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      {
+        const SPixel& here = world[x][y];
+        if (here.valid && here.selected)
+          os << "P " << here.position.x << " " << -here.position.y << " " << here.position.z << endl;
+      }
+}
+
+void writeTriangle(ostream& os,
+                   IPoint p1, IPoint p2, IPoint p3,
+                   const SWorld& world,
+                   const ColorValue& maxVal,
+                   double maxLength,
+                   bool ignoreColor)
+{
+  //  if (textureImage.inside(p1) &&
+  //      textureImage.inside(p2) &&
+  //      textureImage.inside(p3))
+  //    {
+  int n1 = world[p1.x][p1.y].nr;
+  int n2 = world[p2.x][p2.y].nr;
+  int n3 = world[p3.x][p3.y].nr;
+  if (n1 >= 0 && n2 >= 0 && n3 >= 0)
+    {
+      // second selection criteria: max edge length
+      Vector3d xyz1 = world[p1.x][p1.y].position;
+      Vector3d xyz2 = world[p2.x][p2.y].position;
+      Vector3d xyz3 = world[p3.x][p3.y].position;
+      if (
+        (xyz1 - xyz2).length() < maxLength &&
+        (xyz2 - xyz3).length() < maxLength &&
+        (xyz3 - xyz1).length() < maxLength
+      )
+        {
+          if (!ignoreColor)
+            {
+              ColorValue c1 = world[p1.x][p1.y].color;
+              ColorValue c2 = world[p2.x][p2.y].color;
+              ColorValue c3 = world[p3.x][p3.y].color;
+              ColorValue cc = (c1 + c2 + c3) * 0.3333;
+              os << "C " << (double)cc.red / maxVal.red;
+              os << " " << (double)cc.green / maxVal.green;
+              os << " " << (double)cc.blue / maxVal.blue << endl;
+            }
+          os << "T " << n1 << " " << n2 << " " << n3 << endl;
+        }
+    }
+}
+
+
 /*AppGen:Main*/
 int main(int argc, char** argv)
 {
@@ -123,19 +270,32 @@ int main(int argc, char** argv)
       string phaseFN;
       string calibFN;
       fileNames(baseFileName, textureFN, phaseFN, calibFN);
+
       ColorImage textureImage;
       textureImage.read(textureFN);
+
       Image phaseImage;
       phaseImage.read(phaseFN);
+
       int xSize = textureImage.xsize;
       int ySize = textureImage.ysize;
       if (phaseImage.xsize != xSize || phaseImage.ysize != ySize)
         throw IceException("read files", "image sizes differ");
+
       if (display)
         {
-          Show(ON, textureImage);
-          Show(GRAY, phaseImage);
+          Show(ON, textureImage, "texture");
+          Show(GRAY, phaseImage, "phase");
         }
+
+      // create world matrix
+      SWorld world(xSize, ySize);
+      for (int y = 0; y < ySize; y++)
+        for (int x = 0; x < xSize; x++)
+          {
+            world[x][y].color = textureImage.getPixel(x, y);
+            world[x][y].phase = phaseImage.getPixel(x, y) / phaseResolution;
+          }
 
       vector<double> para;
 
@@ -163,115 +323,72 @@ int main(int argc, char** argv)
           printPara(para);
         }
 
-      // file for triangle viewer
-      ofstream os("xyz.tv");
+      compute3d(world, para);
 
       ImageD depth;
-      depth.create(xSize, ySize, -400, 400);
-      depth.set(400.0);
+      depth.create(xSize, ySize, -50, 400);
+      depth.set(-100.0);
+      for (int y = 0; y < ySize; y++)
+        for (int x = 0; x < xSize; x++)
+          {
+            if (world[x][y].valid)
+              depth.setPixel(x, y, world[x][y].position.z);
+          }
 
       if (display)
         {
           Show(GRAY, depth, "depth");
         }
 
-      Image mark;
-      mark.create(xSize, ySize, 16);
-      mark.set(0);
+      Image state;
+      state.create(xSize, ySize, 16);
+      state.set(0);
       if (display)
         {
-          Show(OVERLAY, mark, "selected");
+          Show(OVERLAY, state, "pixel state");
         }
 
-      ColorValue maxVal(0);
+      updateState(world, state);
 
-      WindowWalker w(phaseImage);
-      // calculate coordinates if phase is valid
-      matrix<Vector3d> xyzs(xSize, ySize);
-      xyzs.set(Vector3d(0, 0, 0));
-      for (w.init(); !w.ready(); w.next())
-        {
-          int hPhase = phaseImage.getPixel(w);
-          if (hPhase != 0)
-            {
-              Point uv(w);
-              double u2 = hPhase / phaseResolution;
-              Vector3d xyz;
-              reconstruct(para, uv, u2, xyz);
-              xyzs[w.x][w.y] = xyz;
-              depth.setPixel(w, xyz.z);
-            }
-          else
-            mark.setPixel(w, 1);
-        }
+      selectBoxPixel(world, selectBox);
+
+      updateState(world, state);
+
+      ColorValue maxVal = getMaxColorValue(world);
 
       // "low pass" xyz (test)
       if (sSize > 0)
         {
-          matrix<Vector3d> newXyz(xSize, ySize);
-          for (int y = sSize; y < ySize - sSize; y++)
-            for (int x = sSize; x < xSize - sSize; x++)
-              {
-                Vector3d xyzSum(0, 0, 0);
-                int vCount = 0;
-                for (int dy = -sSize; dy <= sSize; dy++)
-                  {
-                    int yi = y + dy;
-                    for (int dx = -sSize; dx <= sSize; dx++)
-                      {
-                        int xi = x + dx;
-                        if (mark.getPixel(xi, yi) == 0)
-                          {
-                            xyzSum += xyzs[x][y];
-                            vCount++;
-                          }
-                      }
-                  }
-                if (vCount > 0)
-                  newXyz[x][y] = xyzSum / vCount;
-              }
-          xyzs = newXyz;
+          smear(world, sSize);
         }
 
+      numberValidAndSelectedPixel(world);
+
+      // file for triangle viewer
+      ofstream os("xyz.tv");
       // write valid and selected points to 3d file
-      matrix<int> numbers(xSize, ySize);
-      numbers.set(0);
-      int pNumber = 0;
-      for (w.init(); !w.ready(); w.next())
-        {
-          Vector3d xyz = xyzs[w.x][w.y];
-          if (selectBox.inRange(xyz))
-            {
-              numbers[w.x][w.y] = pNumber + 1;
-              pNumber++;
-              // determine max colorvalue of selected pixels
-              ColorValue c = textureImage.getPixel(w);
-              maxColorValue(maxVal, c);
-              // we invert y to get a right handed system
-              os << "P " << xyz.x << " " << -xyz.y << " " << xyz.z << endl;
-            }
-          else
-            mark.setPixel(w, 2);
-        }
+      writePoints(os, world);
 
       IPoint dx(1, 0);
       IPoint dy(0, 1);
 
-      for (w.init(); !w.ready(); w.next())
-        {
-          writeTriangle(os,
-                        w, w + dx, w + dy,
-                        numbers, textureImage, xyzs,
-                        maxVal,
-                        maxLength,
-                        noColor);
-          writeTriangle(os,
-                        w + dy, w + dx, w + dx + dy,
-                        numbers, textureImage, xyzs,
-                        maxVal,
-                        maxLength,
-                        noColor);
-        }
+      for (int y = 0; y < ySize - 1; y++)
+        for (int x = 0; x < xSize - 1; x++)
+          {
+            IPoint w(x, y);
+            writeTriangle(os,
+                          w, w + dx, w + dy,
+                          world,
+                          maxVal,
+                          maxLength,
+                          noColor);
+            writeTriangle(os,
+                          w + dy, w + dx, w + dx + dy,
+                          world,
+                          maxVal,
+                          maxLength,
+                          noColor);
+          }
       os.close();
 
       if (display)

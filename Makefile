@@ -27,7 +27,7 @@ ifndef NOFFTW3
 LIBS := $(LIBS) -lfftw3 
 endif
 
-all: v23d patterngen genCalib calibrate makeCV
+all: v23d patterngen genCalib calibrate to3d
 
 v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o v23d v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(LIBS)
@@ -35,8 +35,8 @@ v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(
 calibrate: calibrate.o calMarker.o v2trafo.o v2file.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o calibrate calibrate.o FileName.o calMarker.o v2trafo.o v2file.o $(LIBS)
 
-makeCV: makeCV.o v2file.o FileName.o v2trafo.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o makeCV makeCV.o FileName.o v2file.o v2trafo.o $(LIBS)	
+to3d: to3d.o v2file.o FileName.o v2trafo.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o FileName.o v2file.o v2trafo.o $(LIBS)	
 
 testcalib: testcalib.o v2trafo.o  $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o v2trafo.o $(LIBS)	
