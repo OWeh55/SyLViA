@@ -321,6 +321,7 @@ int main(int argc, char** argv)
         {
           cout << "using parameter from " << calibFN << endl;
           printPara(para);
+          cout << "computing 3d" << endl;
         }
 
       compute3d(world, para);
@@ -349,20 +350,29 @@ int main(int argc, char** argv)
         }
 
       updateState(world, state);
-
+      if (verbose)
+        cout << "selecting box" << endl;
       selectBoxPixel(world, selectBox);
 
       updateState(world, state);
+
+      if (verbose)
+        cout << "getting max color" << endl;
 
       ColorValue maxVal = getMaxColorValue(world);
 
       // "low pass" xyz (test)
       if (sSize > 0)
         {
+          if (verbose)
+            cout << "filtering smear" << endl;
           smear(world, sSize);
         }
 
       numberValidAndSelectedPixel(world);
+
+      if (verbose)
+        cout << "writing points" << endl;
 
       // file for triangle viewer
       ofstream os("xyz.tv");
@@ -371,6 +381,9 @@ int main(int argc, char** argv)
 
       IPoint dx(1, 0);
       IPoint dy(0, 1);
+
+      if (verbose)
+        cout << "writing triangles" << endl;
 
       for (int y = 0; y < ySize - 1; y++)
         for (int x = 0; x < xSize - 1; x++)
