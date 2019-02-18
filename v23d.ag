@@ -27,6 +27,8 @@ using namespace std;
   opt: y, ymin, int, Ymin, Window y minimum, 0
   opt: Y, ymax, int, Ymax, Window y maximum, -1
 
+  opt: n, nframes, int, framesToAverage, frames to average per pattern, 1
+
   opt: o, output, string, outFile, Name of output files, "v23d"
   opt2:  use -o- for no output
   opt: p, phaseresolution, int, phaseResolution, Subdivision of phase, 32
@@ -64,6 +66,9 @@ int main(int argc, char** argv)
   /*AppGen:MainEnd*/
   try
     {
+      if (framesToAverage % 2 != 1)
+        throw IceException("command line parameters", "frames to average must be odd");
+
       if (debug != 0)
         verbose = true;
 
@@ -156,6 +161,7 @@ int main(int argc, char** argv)
                        sequenceLength,
                        'g',  // color mode
                        readWindow,
+                       framesToAverage,
                        seq, cImg);
           /*
           Show(ON, cImg);

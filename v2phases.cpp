@@ -1,3 +1,4 @@
+#include "v2file.h"
 #include "v23d.h"
 
 // functions to calculate phase from captured images
@@ -42,7 +43,9 @@ int decodeGrayCode(const vector<ImageD>& seq,
             grayCodeValue += difg > 0 ? bit : 0;
           }
         // we accept one uncertain bit assuming change between two values
-        if (nError < 2) // Graycode valid ?
+        //        if (nError < 2) // Graycode valid ?
+        // we avoid uncertain pixels requiring zero errors
+        if (nError == 0)
           {
             phase.setPixel(x, y, ungray[grayCodeValue]);
           }

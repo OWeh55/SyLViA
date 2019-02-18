@@ -64,11 +64,39 @@ void readImage(VideoFile& v, int frameNr, ColorImage& img)
   v.read(img);
 }
 
+void readNImages(VideoFile& v, int frameNr, ColorImage& img, int n)
+{
+  int n2 = n / 2;
+  ColorImage vs;
+  vs.create(img.xsize, img.ysize, img.maxval * n);
+  vs.set(ColorValue(0, 0, 0));
+  ColorImage vt;
+  vt.create(img);
+  // cout << "frameNr: " << frameNr << endl;
+  for (int idx = frameNr - n2; idx <= frameNr + n2; idx++)
+    {
+      readImage(v, idx, vt);
+      WindowWalker w(vs);
+      for (w.init(); !w.ready(); w.next())
+        {
+          vs.setPixel(w, vs.getPixel(w) + vt.getPixel(w));
+        }
+    }
+
+  WindowWalker w(vs);
+  double f = 1.0 / n;
+  for (w.init(); !w.ready(); w.next())
+    {
+      img.setPixel(w, vs.getPixel(w)*f);
+    }
+}
+
 void readSequence(VideoFile& v,
                   double leftBoundary, double rightBoundary,
                   int sequenceLength,
                   int colorMode,
                   const Window& readWindow,
+                  int nFrames,
                   vector<ImageD>& seq,
                   ColorImage& cImg)
 {
@@ -86,6 +114,9 @@ void readSequence(VideoFile& v,
   int ys = window.Height();
 
   double patternLength = (rightBoundary - leftBoundary) / sequenceLength;
+  if (nFrames >= patternLength)
+    throw IceException("readSequence", "number of frames to average exeeds patternLength");
+
   leftBoundary += patternLength; // skip white pattern
 
   int nPattern = (sequenceLength - 2) / 2;
@@ -103,12 +134,13 @@ void readSequence(VideoFile& v,
     {
       int posIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength / 2);
       int negIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength + patternLength / 2);
+      // cout << posIdx << " " << negIdx << endl;
       ColorImage pos;
       pos.create(xo, yo, mv);
-      readImage(v, posIdx, pos);
+      readNImages(v, posIdx, pos, nFrames);
       ColorImage neg;
       neg.create(xo, yo, mv);
-      readImage(v, negIdx, neg);
+      readNImages(v, negIdx, neg, nFrames);
       seq[i].create(xs, ys);
       WindowWalker w(seq[i]);
       for (w.init(); !w.ready(); w.next())

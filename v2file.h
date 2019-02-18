@@ -1,24 +1,26 @@
 #ifndef _V2_FILE_H
 #define _V2_FILE_H
 
+#include <image.h>
 #include <vector>
 #include <string>
 
 void fileNames(const std::string& baseFileName, std::string& textureFN, std::string& phaseFN, std::string& calFN);
 
 void scanVideo(const std::string& fn,
-               vector<double>& gsum,
-               vector<double>& dgsum,
+               std::vector<double>& gsum,
+               std::vector<double>& dgsum,
                int& fps,
                int first, int last,
                int colorMode,
-               const Window& readWindow);
+               const ice::Window& readWindow);
 
 void readSequence(VideoFile& v,
                   double leftBoundary, double rightBoundary,
                   int sequenceLength,
                   int colorMode,
                   const Window& readWindow,
+                  int nFrames,
                   vector<ImageD>& seq,
                   ColorImage& cImg);
 
