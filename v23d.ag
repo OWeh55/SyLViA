@@ -31,7 +31,9 @@ using namespace std;
 
   opt: o, output, string, outFile, Name of output files, "v23d"
   opt2:  use -o- for no output
+  opt: i, interactive, void, interactive, Decide interactively about writing result, false
   opt: p, phaseresolution, int, phaseResolution, Subdivision of phase, 32
+
   opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
   opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
 
@@ -88,18 +90,18 @@ int main(int argc, char** argv)
 
       FileName filename(fn);
 
-      bool writeResult = false;
+      bool shallWriteResult = false;
       if (!outFile.empty())
         {
           if (outFile != "-")
             {
               FileName of(outFile); // remove all but filename
               outFile = of.getName();
-              writeResult = true;
+              shallWriteResult = true;
             }
         }
 
-      if (debug == 0 && !writeResult)
+      if (debug == 0 && !shallWriteResult)
         throw IceException("v23d", "no result and no debug");
 
       vector<double> gsum;
@@ -143,34 +145,59 @@ int main(int argc, char** argv)
       FileName resDir(filename);
       resDir.setExtension("");
 
-      if (writeResult)
+      if (shallWriteResult)
         {
           system(("mkdir -p " + resDir.getFullName()).c_str());
         }
 
       // extract all sequences
       VideoFile v(filename.getFullName());
-      for (int i = 0; i < sequenceBoundaries.size() - 1; i++)
+
+      bool abort = false;
+      for (int i = 0; i < sequenceBoundaries.size() - 1 && !abort; i++)
         {
           if (verbose)
             cout << "extracting sequence " <<  sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
-          vector<ImageD> seq;
+
           ColorImage cImg;
+          ColorImage deviation;
+          vector<ImageD> seq;
+
           readSequence(v,
                        sequenceBoundaries[i], sequenceBoundaries[i + 1],
                        sequenceLength,
                        'g',  // color mode
                        readWindow,
                        framesToAverage,
-                       seq, cImg);
-          /*
-          Show(ON, cImg);
-          GetChar();
-          */
+                       seq, cImg, deviation);
+
           ImageD phase;
           Image mask;
           calcPhases(seq, phase, mask, thresholdg, thresholdp);
-          if (writeResult)
+
+          bool reallyWrite = shallWriteResult;
+
+          if (interactive)
+            {
+              Show(ON, cImg, "texture");
+              Show(ON, deviation, "deviation");
+              Show(GRAY, phase);
+              Show(OVERLAY, mask);
+              if (shallWriteResult)
+                {
+                  if (!Ask("Store this Image"))
+                    reallyWrite = false;
+                }
+              else
+                {
+                  if (!Ask("continue"))
+                    abort = true;
+                }
+
+              Show(OFF, phase);
+            }
+
+          if (reallyWrite)
             {
               string iString(to_string(i));
               while (iString.size() < 3)
@@ -212,13 +239,7 @@ int main(int argc, char** argv)
               iPhase.write(phaseN.getFullName());
               if (verbose)
                 cout << "wrote " << phaseN.getFullName() << endl;
-
             }
-          /*
-          Show(GRAY,phase);
-          Show(OVERLAY,mask);
-          GetChar();
-          */
         }
     }
   catch (IceException& ex)

@@ -22,7 +22,8 @@ void readSequence(VideoFile& v,
                   const Window& readWindow,
                   int nFrames,
                   vector<ImageD>& seq,
-                  ColorImage& cImg);
+                  ColorImage& cImg,
+                  ColorImage& deviation);
 
 void writePlotFile(const std::string& name, const std::vector<double>& v);
 void writePlotFile(const std::string& name, const std::vector<double>& v1,

@@ -98,7 +98,8 @@ void readSequence(VideoFile& v,
                   const Window& readWindow,
                   int nFrames,
                   vector<ImageD>& seq,
-                  ColorImage& cImg)
+                  ColorImage& cImg,
+                  ColorImage& deviation)
 {
   int xo, yo, mv, fps;
   v.getPara(xo, yo, mv, fps);
@@ -122,13 +123,7 @@ void readSequence(VideoFile& v,
   int nPattern = (sequenceLength - 2) / 2;
   seq.resize(nPattern);
 
-  ImageD r, g, b;
-  r.create(xs, ys);
-  r.set(0);
-  g.create(xs, ys);
-  g.set(0);
-  b.create(xs, ys);
-  b.set(0);
+  vector<ColorImage> rgb(nPattern);
 
   for (int i = 0; i < nPattern; i++) // all pattern pairs (pos+neg)
     {
@@ -142,6 +137,7 @@ void readSequence(VideoFile& v,
       neg.create(xo, yo, mv);
       readNImages(v, negIdx, neg, nFrames);
       seq[i].create(xs, ys);
+      rgb[i].create(xs, ys, mv * 2);
       WindowWalker w(seq[i]);
       for (w.init(); !w.ready(); w.next())
         {
@@ -151,9 +147,7 @@ void readSequence(VideoFile& v,
           ColorValue nColor = neg.getPixel(original);
           int nval = nColor.getGray();
           seq[i].setPixel(w, nval - pval);
-          r.setPixel(w, r.getPixel(w) + pColor.red + nColor.red);
-          g.setPixel(w, g.getPixel(w) + pColor.green + nColor.green);
-          b.setPixel(w, b.getPixel(w) + pColor.blue + nColor.blue);
+          rgb[i].setPixel(w, pColor + nColor);
         }
       seq[i].adaptLimits();
       /*
@@ -164,12 +158,25 @@ void readSequence(VideoFile& v,
     }
 
   cImg.create(xs, ys, mv);
+  deviation.create(xs, ys, mv);
   WindowWalker w(cImg);
   for (w.init(); !w.ready(); w.next())
     {
-      cImg.setPixel(w, ColorValue(r.getPixel(w),
-                                  g.getPixel(w),
-                                  b.getPixel(w)) / nPattern / 2);
+      ColorValue cv(0, 0, 0);
+      for (int i = 0; i < nPattern; i++)
+        cv += rgb[i].getPixel(w);
+      cv /= nPattern; // mean value
+      cImg.setPixel(w, cv / 2);
+      ColorValue dev(0, 0, 0);
+      for (int i = 0; i < nPattern; i++)
+        {
+          ColorValue d = cv - rgb[i].getPixel(w);
+          dev.red += abs(d.red);
+          dev.green += abs(d.green);
+          dev.blue += abs(d.blue);
+        }
+      dev /= nPattern * 2;
+      deviation.setPixel(w, dev);
     }
 }
 
