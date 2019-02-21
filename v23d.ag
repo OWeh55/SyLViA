@@ -75,7 +75,7 @@ int main(int argc, char** argv)
         verbose = true;
 
       // prepare window:
-      // set to inf if not given by user
+      // set to \inf if not given by user
       if (Xmax <= 0)
         Xmax = numeric_limits<int>::max();
       if (Ymax <= 0)
@@ -93,7 +93,12 @@ int main(int argc, char** argv)
       bool shallWriteResult = false;
       if (!outFile.empty())
         {
-          if (outFile != "-")
+          if (outFile == "-") // explicitely no output wished -> debug or interactive mode
+            {
+              if (debug == 0)
+                interactive = true;
+            }
+          else
             {
               FileName of(outFile); // remove all but filename
               outFile = of.getName();
@@ -101,7 +106,7 @@ int main(int argc, char** argv)
             }
         }
 
-      if (debug == 0 && !shallWriteResult)
+      if (debug == 0 && outFile.empty())
         throw IceException("v23d", "no result and no debug");
 
       vector<double> gsum;
@@ -109,19 +114,18 @@ int main(int argc, char** argv)
       int nFrames;
 
       int fps = 0;
-      scanVideo(filename.getFullName(),
+      scanVideo(filename,
                 gsum, dgsum,
                 fps,
                 first, last, 'g', readWindow);
 
       nFrames = gsum.size();
       if (nFrames == 0)
-        throw IceException("readImages", "No frames read");
+        throw IceException("scanVideo", "No frames read");
 
       if (verbose)
-        cout << "read " << nFrames << " images" << endl;
+        cout << "found " << nFrames << " images" << endl;
 
-      //  cout << gsum.size() << " " << dgsum.size() << endl;
       vector<double> sequenceBoundaries;
       analysis(gsum, dgsum,
                fps,
