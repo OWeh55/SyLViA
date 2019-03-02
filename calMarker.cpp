@@ -124,7 +124,7 @@ void findMarker(Image& tGray, Image& tMark,
           if (debug & 6)
             Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
                    length, area, form, conv);
-          if (form > 4 && form < 5.5 &&
+          if (form > 3.5 && form < 5.5 &&
               area > sqSize / 2 && area < sqSize * 2)
             {
               FillRegion(c, 5, tMark);
