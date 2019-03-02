@@ -27,9 +27,10 @@ private:
   int nRefs;
 };
 
-vector<double> calculateParameter(const vector<Point>& uv,
-                                  const vector<double>& u2,
-                                  const vector<Vector3d>& xyz);
+vector<double> computeParameter(const vector<Point>& uv,
+                                const vector<double>& u2,
+                                const vector<Vector3d>& xyz,
+                                bool affineOnly);
 
 extern bool verbose;
 

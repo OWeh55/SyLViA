@@ -1,4 +1,3 @@
-
 #include <image.h>
 
 #include "v2trafo.h"
@@ -79,9 +78,10 @@ int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
   return 1;
 }
 
-vector<double> calculateParameter(const vector<Point>& uv,
-                                  const vector<double>& u2,
-                                  const vector<Vector3d>& xyz)
+vector<double> computeParameter(const vector<Point>& uv,
+                                const vector<double>& u2,
+                                const vector<Vector3d>& xyz,
+                                bool affineOnly)
 {
   LMcalib calibFunctor(uv, u2, xyz);
   vector<double> cData(18, 0.0);
@@ -91,13 +91,28 @@ vector<double> calculateParameter(const vector<Point>& uv,
   cData[7] = 200;
   cData[11] = 1.0;
   LMSolver lms(calibFunctor);
-  lms.solve(cData);
+  vector<int> selected{0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14};
+  lms.solve(cData, selected);
   if (verbose)
     {
+      cout << "affine Iteration:" << endl;
       cout << "after " << lms.getNIterations() << " iterations " << endl;
       cout << "code: " << lms.getInfo() << endl;
-      cout << "    " << LMDifMessage(lms.getInfo()) << endl;
+      // cout << "    " << LMDifMessage(lms.getInfo()) << endl;
       cout << "remaining error: " << lms.getErrorValue() << endl;
+      printPara(cData);
+    }
+  if (! affineOnly)
+    {
+      lms.solve(cData);
+      if (verbose)
+        {
+          cout << "after " << lms.getNIterations() << " iterations " << endl;
+          cout << "code: " << lms.getInfo() << endl;
+          // cout << "    " << LMDifMessage(lms.getInfo()) << endl;
+          cout << "remaining error: " << lms.getErrorValue() << endl;
+          printPara(cData);
+        }
     }
   return cData;
 }
