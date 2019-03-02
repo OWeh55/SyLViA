@@ -37,7 +37,7 @@ int main(int argc, char** argv)
           vuv.push_back(uv);
           vu2.push_back(u2);
         }
-  vector<double> epara = calculateParameter(vuv, vu2, vxyz);
+  vector<double> epara = computeParameter(vuv, vu2, vxyz, false);
   printPara(epara);
   // reconstruction
   for (int i = 0; i < vxyz.size(); i++)
