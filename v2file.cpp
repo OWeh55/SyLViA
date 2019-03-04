@@ -22,37 +22,26 @@ vector<string> split(const string& s, char del)
   return result;
 }
 
-void fileNames(const string& baseFileName, string& textureFN, string& phaseFN, string& calFN)
+void fileNames(const string& baseFileName,
+               string& textureFN,
+               string& phaseFN,
+               string& calFN)
 {
   FileName fnt(baseFileName);
+  cout << (string)fnt << endl;
   fnt.setExtension("pnm");
+  fnt.setSpec("texture");
+  cout << (string)fnt << endl;
   FileName fnp(baseFileName);
   fnp.setExtension("pgm");
+  fnp.setSpec("phase");
   FileName fnc(baseFileName);
   fnc.setExtension("cal");
-
-  string basename = fnt.getName();
-  vector<string> parts = split(basename, '_');
-
-  // remove content marker
-  if (parts.back() == "phase" || parts.back() == "texture" || parts.back() == "cal" || parts.back().empty())
-    parts.pop_back();
-  // recombine parts
-  basename = "";
-  for (const auto& s : parts)
-    {
-      if (basename.empty())
-        basename = s;
-      else
-        basename += "_" + s;
-    }
-
-  fnt.setName(basename + "_texture");
-  fnp.setName(basename + "_phase");
-  fnc.setName(basename + "_cal");
+  fnc.setSpec("cal");
   textureFN = fnt;
   phaseFN = fnp;
   calFN = fnc;
+  cout << textureFN << " " << phaseFN << " " << calFN << endl;
 }
 
 void readImage(VideoFile& v, int frameNr, ColorImage& img)

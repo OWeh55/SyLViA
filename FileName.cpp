@@ -9,30 +9,31 @@
 using namespace std;
 using ice::IceException;
 
+void split(const string& s, char del, vector<string>& parts)
+{
+  unsigned int i = 0;
+  parts.clear();
+  parts.push_back("");
+  while (i < s.size())
+    {
+      if (s[i] != del)
+        parts.back() += s[i];
+      else
+        {
+          parts.push_back("");
+        }
+      i++;
+    }
+}
+
 void FileName::setPath(const std::string& n)
 {
   // set parts of n to path
-  // includes filename!
+  // includes filename if available!
   if (n.size() == 0)
     throw IceException("FileName::setPath", "empty pathname");
   absolute = n[0] == pathdel;
-  path.clear();
-  unsigned int i = 0;
-  string thisPart;
-  while (i < n.size())
-    {
-      if (n[i] != pathdel)
-        thisPart += n[i];
-      else
-        {
-          if (!thisPart.empty())
-            path.push_back(thisPart);
-          thisPart.clear();
-        }
-      ++i;
-    }
-  if (!thisPart.empty())
-    path.push_back(thisPart);
+  split(n, pathdel, path);
 }
 
 FileName::FileName(const std::string& n)
@@ -56,6 +57,12 @@ FileName::FileName(const std::string& n)
         {
           extension = name.substr(lastExtensionDelimiterPosition + 1);
           name.resize(lastExtensionDelimiterPosition);
+          splitName();
+          /*
+          cout << name << endl;
+          cout << spec << endl;
+          cout << number << endl;
+          */
         }
     }
 }
@@ -66,6 +73,7 @@ void FileName::setName(const string& n)
     if (n[i] == pathdel)
       throw IceException("Filename::setName", "path delimiter in name");
   name = n;
+  splitName();
 }
 
 void FileName::setExtension(const string& n)
@@ -94,7 +102,7 @@ std::string FileName::getFullName() const
   std::string res = getPath();
   if (res != "/" && !res.empty())
     res += '/';
-  res += name;
+  res += getName();
   if (!extension.empty())
     res += extdel + extension;
   return res;
@@ -117,4 +125,35 @@ std::string FileName::getPath() const
       res += path.back();
     }
   return res;
+}
+
+std::string toString(int n, int len)
+{
+  if (n < 0)
+    throw IceException("FileName", "number is negative");
+  string res = to_string(n);
+  while (res.size() < len)
+    res = '0' + res;
+  return res;
+}
+
+std::string FileName::getName() const
+{
+  return getBaseName() + partdel + toString(number, nDigits) + partdel + spec;
+}
+
+void FileName::splitName()
+{
+  vector<string> parts;
+  split(name, partdel, parts);
+  if (parts.size() > 2) // precondition for names of type "basename_number_spec"
+    {
+      spec = parts.back();
+      parts.pop_back();
+      number = stoi(parts.back());
+      parts.pop_back();
+      name = parts[0];
+      for (int i = 1; i < parts.size(); i++)
+        name += partdel + parts[i];
+    }
 }

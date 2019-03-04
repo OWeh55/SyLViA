@@ -30,6 +30,7 @@ using namespace std;
   opt: d, display, void, display, display images, false
   opt: D, debug, Void, debug, print debug information, false
   opt: v, verbose, Void, verbose, be verbose, false
+  opt: h, help, usage, , Help
 AppGen*/
 
 // class that contains all 3d data (pointcloud level)
