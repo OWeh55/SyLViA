@@ -29,7 +29,9 @@ void writePlotFile(const std::string& name, const std::vector<double>& v);
 void writePlotFile(const std::string& name, const std::vector<double>& v1,
                    const std::vector<double>& v2);
 
-void writeCalib(const std::string& name, const std::vector<double>& v);
-bool readCalib(const std::string& name, std::vector<double>& v);
+void writeCalib(const std::string& name,
+                const std::vector<double>& v, char calibrationModel);
+bool readCalib(const std::string& name,
+               std::vector<double>& v, char& calibrationModel);
 
 #endif

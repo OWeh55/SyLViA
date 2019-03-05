@@ -18,7 +18,9 @@ using namespace std;
   prog: Calibrate projector and camera
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
   opt: p, phaseresolution, double, phaseResolution, resolution of phase image, 32.0
-  opt: a, affineonly, void, affineOnly, Calibrate affie model only, false
+  opt: c, calibrationmodel, char, calibrationModel, Model for calipbration, 'p'
+  opt2: c == 'p'   projective tranformation
+  opt2: c == 'a'   affine transformation
   opt: L, localsegsize, Int, localSegSize, window size for local segmentation, 11
   opt: l, localseglevel, Int, localSegLevel, threshold for local segmentation, 15
   opt: d, display, void, display, show images, false
@@ -191,16 +193,17 @@ int main(int argc, char** argv)
         {
           cout << "found " << uv.size() << " references" << endl;
         }
+
       /*
       for (int i = 0; i < uv.size(); i++)
         cout << uv[i] << " " << u2[i] << " " << xyz[i] << endl;
       */
 
-      vector<double> cData = computeParameter(uv, u2, xyz, affineOnly);
+      vector<double> cData = computeParameter(uv, u2, xyz, calibrationModel);
       //      if (verbose)
       //        printPara(cData);
 
-      writeCalib(calFN, cData);
+      writeCalib(calFN, cData, calibrationModel);
       if (display)
         GetChar();
     }

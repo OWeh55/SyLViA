@@ -11,12 +11,12 @@ void reconstruct(const vector<double>& para,
                  Vector3d& xyz);
 
 // calibration (estimate parameters)
-class LMcalib: public LMFunctor
+class LMcalibP: public LMFunctor
 {
 public:
-  LMcalib(const vector<Point>& uv,
-          const vector<double>& u2,
-          const vector<Vector3d>& xyz);
+  LMcalibP(const vector<Point>& uv,
+           const vector<double>& u2,
+           const vector<Vector3d>& xyz);
   int getDimension() const;
   int operator()(const vector<double>& p, vector<double>& result) const;
 
@@ -30,7 +30,7 @@ private:
 vector<double> computeParameter(const vector<Point>& uv,
                                 const vector<double>& u2,
                                 const vector<Vector3d>& xyz,
-                                bool affineOnly);
+                                char mode);
 
 extern bool verbose;
 

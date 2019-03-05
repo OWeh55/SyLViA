@@ -169,17 +169,19 @@ void readSequence(VideoFile& v,
     }
 }
 
-void writeCalib(const string& name, const vector<double>& para)
+void writeCalib(const string& name, const vector<double>& para, char model)
 {
   ofstream os(name);
   if (verbose)
     cout << "writing " << name << endl;
-  os << "cal1" << endl;
+  // we start to use second format with different models
+  os << "cal2" << endl;
+  os << model << endl;
   for (int i = 0; i < para.size(); i++)
     os << setw(8) << para[i] << endl;
 }
 
-bool readCalib(const string& name, vector<double>& para)
+bool readCalib(const string& name, vector<double>& para, char& model)
 {
   ifstream is(name);
   if (!is.good())
@@ -188,6 +190,20 @@ bool readCalib(const string& name, vector<double>& para)
   getline(is, tag);
   if (tag == "cal1")
     {
+      model = 'p';
+      para.clear();
+      for (int i = 0; i < 18; i++)
+        {
+          double p;
+          is >> p;
+          para.push_back(p);
+        }
+    }
+  else if (tag == "cal2")
+    {
+      string line;
+      getline(is, line);
+      model = line[0];
       para.clear();
       for (int i = 0; i < 18; i++)
         {

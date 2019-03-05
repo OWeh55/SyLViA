@@ -304,24 +304,31 @@ int main(int argc, char** argv)
           }
 
       vector<double> para;
-
+      char calibrationModel = 'p';
       if (calibFilename.empty())
         {
+          // no given calib filename, use corresponding calib file
           FileName fn(calibFN);
-          if (!readCalib(calibFN, para))
+          if (!readCalib(calibFN, para, calibrationModel))
             {
+              // no directly associated calib file,
+              // use first calib file in path
               vector<string> calFiles;
               Directory(calFiles, fn.getPath() + "/*cal", DIR_FILE);
               if (calFiles.empty())
                 throw IceException("Load calib", "No file found");
               calibFN = fn.getPath() + "/" + calFiles[0];
-              readCalib(calibFN, para);
+              if (!readCalib(calibFN, para, calibrationModel))
+                throw IceException("readCalib", "no calib found");
             }
         }
       else
         {
           calibFN = calibFilename;
-          readCalib(calibFN, para);
+          if (!readCalib(calibFN, para, calibrationModel))
+            {
+              throw IceException("readCalib", "Cannot read " + calibFilename);
+            }
         }
       if (verbose)
         {

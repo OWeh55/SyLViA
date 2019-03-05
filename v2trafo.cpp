@@ -49,18 +49,17 @@ void reconstruct(const vector<double>& para,
   xyz.z = xyzV[2];
 }
 
-
-LMcalib::LMcalib(const vector<Point>& uv,
-                 const vector<double>& u2,
-                 const vector<Vector3d>& xyz):
+LMcalibP::LMcalibP(const vector<Point>& uv,
+                   const vector<double>& u2,
+                   const vector<Vector3d>& xyz):
   uv(uv), u2(u2), xyz(xyz), nRefs(uv.size()) {}
 
-int LMcalib::getDimension() const
+int LMcalibP::getDimension() const
 {
   return nRefs * 3;
 }
 
-int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
+int LMcalibP::operator()(const vector<double>& p, vector<double>& result) const
 {
   int d = 0;
   for (int i = 0; i < nRefs; i++)
@@ -78,12 +77,12 @@ int LMcalib::operator()(const vector<double>& p, vector<double>& result) const
   return 1;
 }
 
-vector<double> computeParameter(const vector<Point>& uv,
-                                const vector<double>& u2,
-                                const vector<Vector3d>& xyz,
-                                bool affineOnly)
+vector<double> computeParameterA(const vector<Point>& uv,
+                                 const vector<double>& u2,
+                                 const vector<Vector3d>& xyz,
+                                 char model)
 {
-  LMcalib calibFunctor(uv, u2, xyz);
+  LMcalibP calibFunctor(uv, u2, xyz);
   vector<double> cData(18, 0.0);
   cData[0] = 2;
   cData[3] = 500;
@@ -102,7 +101,7 @@ vector<double> computeParameter(const vector<Point>& uv,
       cout << "remaining error: " << lms.getErrorValue() << endl;
       printPara(cData);
     }
-  if (! affineOnly)
+  if (!(model == 'a'))
     {
       lms.solve(cData);
       if (verbose)
@@ -115,6 +114,33 @@ vector<double> computeParameter(const vector<Point>& uv,
         }
     }
   return cData;
+}
+
+vector<double> computeParameterB(const vector<Point>& uv,
+                                 const vector<double>& u2,
+                                 const vector<Vector3d>& xyz,
+                                 char model)
+{
+  Camera camUV;
+  Camera camU2;
+  // Calib(camUV,xyz,uv,3);
+  // Calib(camU2,xyz,u2,3);
+  cerr << "Not implemented" << endl;
+  return vector<double>(0);
+}
+
+vector<double> computeParameter(const vector<Point>& uv,
+                                const vector<double>& u2,
+                                const vector<Vector3d>& xyz,
+                                char model)
+{
+  if (model == 'p' || model == 'a')
+    return computeParameterA(uv, u2, xyz, model);
+  else if (model == 'c')
+    return computeParameterB(uv, u2, xyz, model);
+  else
+    throw IceException("computeParameter", string("wrong model ") + model);
+  return vector<double>(0);
 }
 
 void printPara(const vector<double>& p)
