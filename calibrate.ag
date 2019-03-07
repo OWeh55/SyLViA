@@ -151,6 +151,7 @@ int main(int argc, char** argv)
                     uv.push_back(squarePos[minIdx]);
                     u2.push_back(phaseD / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, 0));
+                    //    cout << xyz.back() << endl;
                     Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 1, DEFAULT, tMark);
                   }
               }
@@ -185,6 +186,7 @@ int main(int argc, char** argv)
                     uv.push_back(squarePos[minIdx]);
                     u2.push_back(phaseD / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, deltaZ));
+                    //cout << xyz.back() << endl;
                     Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 2, DEFAULT, tMark);
                   }
               }

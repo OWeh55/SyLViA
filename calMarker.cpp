@@ -59,9 +59,14 @@ void findSquares(Image& tls, Image& tMark,
         {
           double length, area, form, conv;
           FeatureContur(c, length, area, form, conv);
-          //    Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
-          //     length, area, form, conv);
-          //    GetChar();
+          /*
+          if (area<-10)
+          {
+            Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
+             length, area, form, conv);
+            GetChar();
+          }
+          */
           if (-area > 40 && -form < 1.50 && conv < 1.05)
             {
               // square (?)
@@ -75,6 +80,10 @@ void findSquares(Image& tls, Image& tMark,
       else
         tMark.setPixel(start, 1);
     }
+
+  if (debug & 2)
+    GetChar();
+
   if (pSquares.empty())
     throw "no square found";
 
@@ -100,7 +109,8 @@ void findMarker(Image& tGray, Image& tMark,
   if (debug & 1)
     Show(OVERLAY, localSegImage);
   LocalSeg(tGray, localSegImage, localSegSize, localSegLevel);
-
+  if (debug & 1)
+    GetChar();
   double sqSize;
   findSquares(localSegImage, tMark, squares, sqSize);
 
@@ -108,6 +118,7 @@ void findMarker(Image& tGray, Image& tMark,
     {
       GetChar();
     }
+
   IPoint start(0, 0);
 
   vector<Contur> conturs;
@@ -124,7 +135,7 @@ void findMarker(Image& tGray, Image& tMark,
           if (debug & 6)
             Printf("length: %lf  area: %lf  form: %lf  conv: %lf\n",
                    length, area, form, conv);
-          if (form > 3.5 && form < 5.5 &&
+          if (form > 3.5 && form < 6.9 &&
               area > sqSize / 2 && area < sqSize * 2)
             {
               FillRegion(c, 5, tMark);

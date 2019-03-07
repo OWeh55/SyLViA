@@ -116,6 +116,55 @@ vector<double> computeParameterA(const vector<Point>& uv,
   return cData;
 }
 
+class CalibFunctor: public LMFunctor
+{
+public:
+  CalibFunctor(Camera& cam,
+               const std::vector<Vector3d>& xyz,
+               const std::vector<Point>& uv):
+    cam(cam), xyz(xyz), uv(uv), nPoints(uv.size())
+  {
+    if (xyz.size() != nPoints)
+      throw IceException("CalibFunctor", M_DIFFERENT_LISTSIZE);
+  }
+
+  CalibFunctor(Camera& cam,
+               const std::vector<Vector3d>& xyz,
+               const std::vector<double>& u2):
+    cam(cam), xyz(xyz), uv(u2.size()), nPoints(xyz.size())
+  {
+    if (uv.size() != nPoints)
+      throw IceException("CalibFunctor", M_DIFFERENT_LISTSIZE);
+    for (int i = 0; i < nPoints; i++)
+      uv[i] = Point(u2[i], 0);
+  }
+
+  int getDimension() const
+  {
+    return nPoints * 2;
+  }
+
+  int operator()(const vector<double>& p, vector<double>& result) const
+  {
+    cam.set(p);
+    int idx = 0;
+    for (int i = 0; i < nPoints; i++)
+      {
+        Point p2 = cam.transform(xyz[i]);
+        Point diff = p2 - uv[i];
+        result[idx++] = diff.x;
+        result[idx++] = diff.y;
+      }
+    return 0;
+  }
+
+private:
+  Camera& cam;
+  std::vector<Vector3d> xyz;
+  std::vector<Point> uv;
+  int nPoints;
+};
+
 vector<double> computeParameterB(const vector<Point>& uv,
                                  const vector<double>& u2,
                                  const vector<Vector3d>& xyz,
@@ -123,9 +172,26 @@ vector<double> computeParameterB(const vector<Point>& uv,
 {
   Camera camUV;
   Camera camU2;
-  // Calib(camUV,xyz,uv,3);
-  // Calib(camU2,xyz,u2,3);
-  cerr << "Not implemented" << endl;
+  CalibFunctor fUV(camUV, xyz, uv);
+  LMSolver lm(fUV);
+  cout << "initial: " << camUV.toString() << endl;
+  vector<double> cUVpara = camUV.makeVectorDouble();
+  vector<int> selectedUV{CAM_FOCAL_LENGTH, CAM_PRINCIPAL_POINT_U, CAM_PRINCIPAL_POINT_V,
+                         CAM_DX, CAM_DY, CAM_DZ, CAM_ALPHA, CAM_BETA, CAM_GAMMA};
+  lm.solve(cUVpara, selectedUV);
+  cout << "restricted: " << camUV.toString() << endl;
+  lm.solve(cUVpara);
+  cout << "final: " << camUV.toString() << endl;
+
+  CalibFunctor fU2(camU2, xyz, u2);
+  vector<double> cU2para = camU2.makeVectorDouble();
+  vector<int> selected{CAM_FOCAL_LENGTH, CAM_PRINCIPAL_POINT_U, CAM_PRINCIPAL_POINT_V,
+                       CAM_DX, CAM_DY, CAM_DZ, CAM_ALPHA, CAM_BETA, CAM_GAMMA};
+  LMSolver lmU2(fU2);
+  lmU2.solve(cU2para, selected);
+
+  cout << camU2.toString() << endl;
+  //  cerr << "Not implemented" << endl;
   return vector<double>(0);
 }
 
