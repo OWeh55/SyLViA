@@ -144,7 +144,8 @@ public:
     return nPoints * 2;
   }
 
-  int operator()(const vector<double>& p, vector<double>& result) const
+  int operator()(const vector<double>& p,
+		 vector<double>& result) const
   {
     cam.set(p);
     int idx = 0;
@@ -165,6 +166,21 @@ private:
   int nPoints;
 };
 
+void calibrateC(Camera &cam, const vector<Vector3d> &xyz, const vector<Point> &uv)
+{
+  CalibFunctor f(cam, xyz, uv);
+  LMSolver lm(f);
+  vector<double> cpara = cam.makeVectorDouble();
+  lm.setStopConditions(1e-16, 1e-16, 1e-16, 1000000);
+  vector<int> selected3{CAM_FOCAL_LENGTH,
+			CAM_PRINCIPAL_POINT_U, CAM_PRINCIPAL_POINT_V,
+			CAM_DX, CAM_DY, CAM_DZ, CAM_ALPHA, CAM_BETA, CAM_GAMMA};
+  lm.solve(cpara,selected3);
+  // cout << lm.getInfo() << endl;
+  // cout << lm.getErrorValue()<<endl;
+  cam.set(cpara);
+}
+
 vector<double> computeParameterB(const vector<Point>& uv,
                                  const vector<double>& u2,
                                  const vector<Vector3d>& xyz,
@@ -180,9 +196,10 @@ vector<double> computeParameterB(const vector<Point>& uv,
                          CAM_DX, CAM_DY, CAM_DZ, CAM_ALPHA, CAM_BETA, CAM_GAMMA};
   lm.solve(cUVpara, selectedUV);
   cout << "restricted: " << camUV.toString() << endl;
+  cout << camUV.getTrafo().getMatrix() << endl;
   lm.solve(cUVpara);
   cout << "final: " << camUV.toString() << endl;
-
+  cout << camUV.getTrafo().getMatrix() << endl;
   CalibFunctor fU2(camU2, xyz, u2);
   vector<double> cU2para = camU2.makeVectorDouble();
   vector<int> selected{CAM_FOCAL_LENGTH, CAM_PRINCIPAL_POINT_U, CAM_PRINCIPAL_POINT_V,
@@ -190,7 +207,7 @@ vector<double> computeParameterB(const vector<Point>& uv,
   LMSolver lmU2(fU2);
   lmU2.solve(cU2para, selected);
 
-  cout << camU2.toString() << endl;
+  //  cout << camU2.toString() << endl;
   //  cerr << "Not implemented" << endl;
   return vector<double>(0);
 }

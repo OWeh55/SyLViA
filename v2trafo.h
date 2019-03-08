@@ -32,6 +32,8 @@ vector<double> computeParameter(const vector<Point>& uv,
                                 const vector<Vector3d>& xyz,
                                 char mode);
 
+void calibrateC(Camera &cam, const vector<Vector3d> &xyz, const vector<Point> &uv);
+
 extern bool verbose;
 
 void printPara(const vector<double>& p);

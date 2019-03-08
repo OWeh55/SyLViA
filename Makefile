@@ -41,6 +41,9 @@ to3d: to3d.o v2file.o FileName.o v2trafo.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 testcalib: testcalib.o v2trafo.o  $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o v2trafo.o $(LIBS)	
 
+testcam: testcam.o v2trafo.o  $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o testcam testcam.o v2trafo.o $(LIBS)	
+
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c
 

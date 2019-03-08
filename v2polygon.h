@@ -23,5 +23,5 @@ constexpr double xPosB = 7 - markerSize / 2;
 constexpr double yPosB = 3 - markerSize / 2;
 
 // distance of planes (A, B) in mm
-constexpr double deltaZ = -24;
+constexpr double deltaZ = 24;
 #endif
