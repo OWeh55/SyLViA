@@ -2,6 +2,8 @@ ifndef ICEDIR
 ICEDIR=/home/noo/ice
 endif
 
+MODELS=model0.o model1.o model2.o calibrator.o
+
 LOPT := $(OPT)
 COPT := $(OPT) -std=c++11
 LIBS := -lice -ljpeg -ltiff -lpng `wx-config --libs`
@@ -32,17 +34,17 @@ all: v23d patterngen genCalib calibrate to3d
 v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o v23d v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(LIBS)
 
-calibrate: calibrate.o calMarker.o v2trafo.o v2file.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o calibrate calibrate.o FileName.o calMarker.o v2trafo.o v2file.o $(LIBS)
+calibrate: calibrate.o calMarker.o v2file.o FileName.o $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o calibrate calibrate.o FileName.o calMarker.o v2file.o  $(MODELS) $(LIBS)
 
-to3d: to3d.o v2file.o FileName.o v2trafo.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o FileName.o v2file.o v2trafo.o $(LIBS)	
+to3d: to3d.o v2file.o FileName.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o FileName.o v2file.o $(MODELS) $(LIBS)	
 
-testcalib: testcalib.o v2trafo.o  $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o v2trafo.o $(LIBS)	
+testcalib: testcalib.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o  $(MODELS) $(LIBS)	
 
-testcam: testcam.o v2trafo.o  $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o testcam testcam.o v2trafo.o $(LIBS)	
+testcam: testcam.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o testcam testcam.o  $(MODELS) $(LIBS)	
 
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c

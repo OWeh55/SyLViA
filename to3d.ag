@@ -79,7 +79,7 @@ private:
   double zMax;
 };
 
-void compute3d(SWorld& world, const vector<double>& para)
+void compute3d(const SLModel& model, SWorld& world)
 {
   int xSize = world.rows();
   int ySize = world.cols();
@@ -91,7 +91,7 @@ void compute3d(SWorld& world, const vector<double>& para)
         if (here.phase != 0.0)
           {
             Point uv(x, y);
-            reconstruct(para, uv, here.phase, here.position);
+            model.reconstruct(uv, here.phase, here.position);
             here.valid = true;
           }
         else
@@ -330,14 +330,30 @@ int main(int argc, char** argv)
               throw IceException("readCalib", "Cannot read " + calibFilename);
             }
         }
+
+      SLModel* slModel = nullptr;
+      switch (calibrationModel)
+        {
+        case 'p':
+        case 'a':
+          slModel = new SLModel1();
+          slModel->setPara(para);
+          break;
+        case 'c':
+          slModel = new SLModel2();
+          slModel->setPara(para);
+        }
+
       if (verbose)
         {
           cout << "using parameter from " << calibFN << endl;
-          printPara(para);
+          slModel->printPara();
           cout << "computing 3d" << endl;
         }
 
-      compute3d(world, para);
+      compute3d(*slModel, world);
+      delete slModel;
+      slModel = nullptr;
 
       ImageD depth;
       depth.create(xSize, ySize, -50, 400);

@@ -32,6 +32,18 @@ using namespace std;
   opt: h, help, usage, usage, Help, false
 AppGen*/
 
+/*
+ * steps
+ * - local segmentation in texture image -D 1
+ * - search squares -D 2
+ * - search polygons -D 4 (features)
+ * - find matching conturs - polygons
+ * - find transformation contur - polygon A/B
+ * - assign squares to posiions (2 planes)
+ * - calibration of model
+ * - projection of model (debug)
+ */
+
 double getCenterPhase(const Image& phase, const Contur& c)
 {
   Point centroid = Centroid(c);
@@ -43,7 +55,6 @@ double getCenterPhase(const Image& phase, const Contur& c)
       double phaseD = phase.getPixel(w);
       if (phaseD != 0.0)
         fn.FitVal(w, phaseD);
-
     }
   try
     {
@@ -86,6 +97,7 @@ int main(int argc, char** argv)
       texture.read(textureFN);
       if (display)
         Show(ON, texture);
+
       Image tGray;
       Image tMark;
       tGray.create(xs, ys, mv);
@@ -119,6 +131,7 @@ int main(int argc, char** argv)
 
       vector<Point> uv;
       vector<double> u2;
+
       vector<Vector3d> xyz;
       // find square markers in 2 planes
       // create list of references
@@ -145,14 +158,14 @@ int main(int argc, char** argv)
               {
                 // marker found
                 double phaseD = getCenterPhase(phase, squares[minIdx]);
-                //int phaseI = phase.getPixel(IPoint(squarePos[minIdx]));
                 if (phaseD > 0) // phase valid?
                   {
                     uv.push_back(squarePos[minIdx]);
                     u2.push_back(phaseD / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, 0));
                     //    cout << xyz.back() << endl;
-                    Line(squarePos[minIdx].x, squarePos[minIdx].y, p.x, p.y, 1, DEFAULT, tMark);
+                    Line(squarePos[minIdx].x, squarePos[minIdx].y,
+                         p.x, p.y, 1, DEFAULT, tMark);
                   }
               }
           }
@@ -201,7 +214,22 @@ int main(int argc, char** argv)
         cout << uv[i] << " " << u2[i] << " " << xyz[i] << endl;
       */
 
-      vector<double> cData = computeParameter(uv, u2, xyz, calibrationModel);
+      SLModel* model;
+      switch (calibrationModel)
+        {
+        case 'a':
+        case 'p':
+          model = new SLModel1();
+          break;
+        case 'c':
+          model = new SLModel2();
+          break;
+        default:
+          throw IceException("calibrationModel", "wrong model ");
+        }
+
+      model->computeParameter(uv, u2, xyz, calibrationModel);
+      vector<double> cData = model->getPara();
       //      if (verbose)
       //        printPara(cData);
 

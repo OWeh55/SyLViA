@@ -36,7 +36,7 @@ void FileName::setPath(const std::string& n)
   split(n, pathdel, path);
 }
 
-FileName::FileName(const std::string& n)
+FileName::FileName(const std::string& n): spec(""), number(-1)
 {
   if (n.size() == 0)
     throw IceException("FileName", "empty filename");
@@ -139,7 +139,10 @@ std::string toString(int n, int len)
 
 std::string FileName::getName() const
 {
-  return getBaseName() + partdel + toString(number, nDigits) + partdel + spec;
+  if (number < 0)
+    return getBaseName();
+  else
+    return getBaseName() + partdel + toString(number, nDigits) + partdel + spec;
 }
 
 void FileName::splitName()
