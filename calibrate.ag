@@ -28,6 +28,8 @@ using namespace std;
   opt2:  1  result of local segmentation
   opt2:  2  found squares
   opt2:  4  features of preselected conturs
+  opt2:  8  found references
+  opt2: 16  references after calibration
   opt: v, verbose, Void, verbose, be verbose, false
   opt: h, help, usage, usage, Help, false
 AppGen*/
@@ -225,15 +227,38 @@ int main(int argc, char** argv)
           model = new SLModel2();
           break;
         default:
-          throw IceException("calibrationModel", "wrong model ");
+          throw IceException("calibrationModel", "wrong model");
         }
 
-      model->computeParameter(uv, u2, xyz, calibrationModel);
-      vector<double> cData = model->getPara();
-      //      if (verbose)
-      //        printPara(cData);
+      if (debug & 8)
+        for (int i = 0; i < uv.size(); i++)
+          {
+            Vector3d z = xyz[i];
+            Point p = uv[i];
+            double u = u2[i];
+            cout << z << " -> " << p << " ,  " << u << endl;
+          }
 
+      model->computeParameter(uv, u2, xyz, calibrationModel);
+
+      if (verbose)
+        model->printPara();
+
+      if (debug & 16)
+        for (int i = 0; i < uv.size(); i++)
+          {
+            Vector3d z = xyz[i];
+            Point p = uv[i];
+            double u = u2[i];
+            Point pt;
+            double ut;
+            model->transform(z, pt, ut);
+            cout << z << " -> " << pt << " =? " << p << "   " << ut << " =? " << u << endl;
+          }
+
+      vector<double> cData = model->getPara();
       writeCalib(calFN, cData, calibrationModel);
+      // cout << cData << endl;
       if (display)
         GetChar();
     }

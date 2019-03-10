@@ -13,6 +13,15 @@ void SLModel2::setPara(const vector<double>& p)
 SLModel2::SLModel2(): camsValid(false), camUV(1), camU2(1)
 {
   para.resize(nParams * 2);
+  vector<double> pUV = camUV.makeVectorDouble();
+  for (int i = 0; i < pUV.size(); i++)
+    para[i] = pUV[i];
+  para[CAM_GAMMA] = M_PI;
+  vector<double> pU2 = camU2.makeVectorDouble();
+  for (int i = 0; i < pU2.size(); i++)
+    para[i + nParams] = pU2[i];
+  setCamsFromPara();
+  // cout << camUV.getTrafo().getMatrix() << endl;
 }
 
 void SLModel2::setCamsFromPara() const
@@ -27,6 +36,7 @@ void SLModel2::setCamsFromPara() const
       for (int i = 0; i < nParams; i++)
         p[i] = para[i];
       camUV.set(p);
+      // cout << camUV.getTrafo().getMatrix() << endl;
       for (int i = 0; i < nParams; i++)
         p[i] = para[i + nParams];
       camU2.set(p);
@@ -54,9 +64,16 @@ void SLModel2::computeParameter(const vector<Point>& uv,
                                 const vector<Vector3d>& xyz,
                                 char model)
 {
-  LMcalib  f(*this, uv, u2, xyz);
+  LMCalib  f(*this, uv, u2, xyz);
   LMSolver lm(f);
-  lm.solve(para);
+  vector<int> selected{CAM_FOCAL_LENGTH, CAM_PRINCIPAL_POINT_U, CAM_PRINCIPAL_POINT_V,
+                       CAM_DX, CAM_DY, CAM_DZ, CAM_ALPHA, CAM_BETA, CAM_GAMMA,
+                       CAM_FOCAL_LENGTH + nParams, CAM_PRINCIPAL_POINT_U + nParams,
+                       CAM_DX + nParams, CAM_DY + nParams, CAM_DZ + nParams,
+                       CAM_ALPHA + nParams, CAM_BETA + nParams, CAM_GAMMA + nParams
+                      };
+  lm.solve(para, selected);
+  // cout << lm.getInfo() << endl;
   camsValid = false;
   setCamsFromPara();
 }

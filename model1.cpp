@@ -53,7 +53,7 @@ void SLModel1::computeParameter(const vector<Point>& uv,
                                 const vector<Vector3d>& xyz,
                                 char model)
 {
-  LMcalib calibFunctor(*this, uv, u2, xyz);
+  LMCalib calibFunctor(*this, uv, u2, xyz);
   vector<double> cData(18, 0.0);
   cData[0] = 2;
   cData[3] = 500;

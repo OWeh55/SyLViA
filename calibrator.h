@@ -3,10 +3,10 @@
 
 #include "v2trafo.h"
 
-class LMcalib: public LMFunctor
+class LMCalib: public LMFunctor
 {
 public:
-  LMcalib(SLModel& slModel,
+  LMCalib(SLModel& slModel,
           const vector<Point>& uv,
           const vector<double>& u2,
           const vector<Vector3d>& xyz);
