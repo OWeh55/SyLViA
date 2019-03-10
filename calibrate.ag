@@ -254,6 +254,27 @@ int main(int argc, char** argv)
             double ut;
             model->transform(z, pt, ut);
             cout << z << " -> " << pt << " =? " << p << "   " << ut << " =? " << u << endl;
+            // projection of calibration pattern
+            tMark.set(0);
+            for (int x = 2; x < 6; x++)
+              for (int y = 0; y < 6; y++)
+                {
+                  Vector3d p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM, 0);
+                  Point pp;
+                  double u2;
+                  model->transform(p, pp, u2);
+                  Marker(3, pp, 2, 11, tMark);
+                }
+
+            for (int x = 0; x < 2; x++)
+              for (int y = 0; y < 6; y++)
+                {
+                  Vector3d p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM, deltaZ);
+                  Point pp;
+                  double u2;
+                  model->transform(p, pp, u2);
+                  Marker(3, pp, 3, 11, tMark);
+                }
           }
 
       vector<double> cData = model->getPara();
