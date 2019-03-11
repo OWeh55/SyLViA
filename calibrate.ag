@@ -245,38 +245,54 @@ int main(int argc, char** argv)
         model->printPara();
 
       if (debug & 16)
-        for (int i = 0; i < uv.size(); i++)
-          {
-            Vector3d z = xyz[i];
-            Point p = uv[i];
-            double u = u2[i];
-            Point pt;
-            double ut;
-            model->transform(z, pt, ut);
-            cout << z << " -> " << pt << " =? " << p << "   " << ut << " =? " << u << endl;
-            // projection of calibration pattern
-            tMark.set(0);
-            for (int x = 2; x < 6; x++)
-              for (int y = 0; y < 6; y++)
-                {
-                  Vector3d p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM, 0);
-                  Point pp;
-                  double u2;
-                  model->transform(p, pp, u2);
-                  Marker(3, pp, 2, 11, tMark);
-                }
+        {
+          for (int i = 0; i < uv.size(); i++)
+            {
+              Vector3d z = xyz[i];
+              Point p = uv[i];
+              double u = u2[i];
+              Point pt;
+              double ut;
+              model->transform(z, pt, ut);
+              cout << z << " -> " << pt << " =? " << p << "   " << ut << " =? " << u << endl;
+            }
+#if 0
+          // projection of calibration pattern
+          tMark.set(0);
+          for (int x = 2; x < 6; x++)
+            for (int y = 0; y < 6; y++)
+              {
+                Vector3d p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM, 0);
+                Point pp;
+                double u2;
+                model->transform(p, pp, u2);
+                Marker(3, pp, 2, 11, tMark);
+              }
 
-            for (int x = 0; x < 2; x++)
-              for (int y = 0; y < 6; y++)
-                {
-                  Vector3d p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM, deltaZ);
-                  Point pp;
-                  double u2;
-                  model->transform(p, pp, u2);
-                  Marker(3, pp, 3, 11, tMark);
-                }
-          }
-
+          for (int x = 0; x < 2; x++)
+            for (int y = 0; y < 6; y++)
+              {
+                Vector3d p((x + 0.5) * rasterMM, (y + 0.5) * rasterMM, deltaZ);
+                Point pp;
+                double u2;
+                model->transform(p, pp, u2);
+                Marker(3, pp, 3, 11, tMark);
+              }
+#else
+          tMark.set(0);
+          for (int i = 0; i < uv.size(); i++)
+            {
+              Vector3d z = xyz[i];
+              Point p = uv[i];
+              Point pt;
+              double ut;
+              model->transform(z, pt, ut);
+              Marker(3, p, 3, 11, tMark);
+              Marker(3, pt, 2, 11, tMark);
+              Line(p, pt, 1, tMark);
+            }
+#endif
+        }
       vector<double> cData = model->getPara();
       writeCalib(calFN, cData, calibrationModel);
       // cout << cData << endl;

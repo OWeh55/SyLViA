@@ -17,10 +17,10 @@ SLModel2::SLModel2(): camsValid(false), camUV(1), camU2(1)
   for (int i = 0; i < pUV.size(); i++)
     para[i] = pUV[i];
   /*
-  para[CAM_FOCAL_LENGTH]=2500;
+  para[CAM_FOCAL_LENGTH] = 2500;
   para[CAM_GAMMA] = M_PI;
   para[CAM_ALPHA] = M_PI;
-  para[CAM_DZ]=-1000;
+  para[CAM_DZ] = -1000;
   */
   vector<double> pU2 = camU2.makeVectorDouble();
   for (int i = 0; i < pU2.size(); i++)
@@ -81,12 +81,13 @@ void SLModel2::computeParameter(const vector<Point>& uv,
   // cout << lm.getInfo() << endl;
   camsValid = false;
   setCamsFromPara();
-  cout << camUV.getTrafo().getMatrix() << endl;
+  // cout << camUV.getTrafo().getMatrix() << endl;
 }
 
 void SLModel2::printPara() const
 {
   setCamsFromPara();
   cout << camUV.toString() << endl;
+  // cout << camUV.getTrafo().getMatrix() << endl;
   cout << camU2.toString() << endl;
 }
