@@ -137,6 +137,8 @@ int main(int argc, char** argv)
       vector<Vector3d> xyz;
       // find square markers in 2 planes
       // create list of references
+      //
+      // plane A
       for (int y = 0; y < 6; y++)
         for (int x = 2; x < 6; x++)
           {
@@ -165,13 +167,13 @@ int main(int argc, char** argv)
                     uv.push_back(squarePos[minIdx]);
                     u2.push_back(phaseD / phaseResolution);
                     xyz.push_back(Vector3d(p.x, p.y, 0));
-                    //    cout << xyz.back() << endl;
+                    // cout << xyz.back() << " " << uv.back() << endl;
                     Line(squarePos[minIdx].x, squarePos[minIdx].y,
                          p.x, p.y, 1, DEFAULT, tMark);
                   }
               }
           }
-
+      // plane B
       for (int y = 0; y < 6; y++)
         for (int x = 0; x < 2; x++)
           {

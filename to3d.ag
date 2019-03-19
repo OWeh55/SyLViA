@@ -219,7 +219,7 @@ void writePoints(ofstream& os, const SWorld& world)
       {
         const SPixel& here = world[x][y];
         if (here.valid && here.selected)
-          os << "P " << here.position.x << " " << -here.position.y << " " << here.position.z << endl;
+          os << "P " << here.position.x << " " << here.position.y << " " << here.position.z << endl;
       }
 }
 
@@ -230,10 +230,6 @@ void writeTriangle(ostream& os,
                    double maxLength,
                    bool ignoreColor)
 {
-  //  if (textureImage.inside(p1) &&
-  //      textureImage.inside(p2) &&
-  //      textureImage.inside(p3))
-  //    {
   int n1 = world[p1.x][p1.y].nr;
   int n2 = world[p2.x][p2.y].nr;
   int n3 = world[p3.x][p3.y].nr;
@@ -419,15 +415,13 @@ int main(int argc, char** argv)
           {
             IPoint w(x, y);
             writeTriangle(os,
-                          // w, w + dx, w + dy,
-                          w, w + dy, w + dx,
+                          w, w + dx, w + dy,
                           world,
                           maxVal,
                           maxLength,
                           noColor);
             writeTriangle(os,
-                          // w + dy, w + dx, w + dx + dy,
-                          w + dx, w + dy, w + dx + dy,
+                          w + dy, w + dx, w + dx + dy,
                           world,
                           maxVal,
                           maxLength,

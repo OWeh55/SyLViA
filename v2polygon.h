@@ -14,14 +14,15 @@ constexpr unsigned char xyB[] = { 0, 0,  1, 0,  4, 4,  7, 0,  8, 0,
                                   3, 5,  0, 1,  0, 0
                                 };
 
-// position of marker is upper left corner
+// "position of marker" is upper left corner of polygon
 constexpr double markerSize = 0.5 ;
+
 constexpr double xPosA = 3 - markerSize / 2;
 constexpr double yPosA = 3 - markerSize / 2;
 
 constexpr double xPosB = 7 - markerSize / 2;
 constexpr double yPosB = 3 - markerSize / 2;
 
-// distance of planes (A, B) in mm
+// distance of planes (B - A) in z direction in mm
 constexpr double deltaZ = -24;
 #endif
