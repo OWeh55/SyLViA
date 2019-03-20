@@ -43,15 +43,15 @@ using namespace std;
   opt: S, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
   opt2: Meaning of characters
   opt2: s - sinus function
-  opt2: c - sinus function
+  opt2: c - cosinus function
   opt2: 1,2,...,9 - gray code bit
   opt2: all pattern are projected as positive and negative
-  opt2: Sequence is expected to start with black to white change
+  opt2: sequence is expected to start with black to white change
 
   opt: D, debug, Int, debug, Debug flags (bitwise or), 0
   opt2:  1 - write gnuplot files in cycle detection
   opt2:  2 - debug boundary detection
-  opt2:  4 - debug pattern extraction
+  opt2:  4 - debug pattern extraction / write pattern files
   opt2:  8 - debug phase detection
   opt2: 16 - debug read video
 

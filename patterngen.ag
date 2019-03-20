@@ -12,11 +12,11 @@ using namespace std;
   prog: Create image sequence
   para: filename, optional, string, fnb, Filename for images/video, ""
 
-  opt: X, xsize, int, sizeX, Bildgroesse X, 848
-  opt: Y, ysize, int, sizeY, Bildgroesse Y, 480
-  opt: H, horizontal, void, horizontal, Streifenmuster horizontal, false
+  opt: X, xsize, int, sizeX, Image size X, 848
+  opt: Y, ysize, int, sizeY, Image size Y, 480
+  opt: H, horizontal, void, horizontal, Horizontal pattern, false
 
-  opt: S, sequence, string, sequence, Bildsequenz-Beschreibung, "P4G1-9cw"
+  opt: S, sequence, string, sequence, Pattern description, "P4G1-9cw"
   opt2:  p + size  - phase shift
   opt2:  P + size  - phase shift (+inverse)
   opt2:  g + range - gray code
@@ -26,16 +26,18 @@ using namespace std;
   opt2:  c         - black
   opt2:  w         - white
 
-  opt: r, repeat, int, repeat, Wiederholung des Einzelbildes im Film, 3
-  opt: R, srepeat, int, srepeat, Wiederholung der Sequenz im Film, 1
+  opt: r, repeat, int, repeat, Repetitions of frame, 3
+  opt: R, srepeat, int, srepeat, Repetitions of sequence, 1
 
-  opt: s, singleimage, void, singleImage, Einzelbild erzeugen, false
+  opt: s, singleimage, void, singleImage, Create single image, false
 
-  opt: f, framespersecond, int, fps, Bilder pro Sekunde, 30
+  opt: f, framespersecond, int, fps, Frames per second, 30
 
-  opt: d, display, void, display, Darstellung der Bilder, false
-  opt: w, wait, Void, wait, Warten nach jedem Bild, false
-  opt: v, verbose, Void, verbose, Viele Meldungen, false
+  opt: d, display, void, display, Show images, false
+  opt2:  includes wait = true
+  opt: w, wait, Void, wait, Wait after each pattern, false
+  opt: v, verbose, Void, verbose, Be verbose, false
+  opt: h, help, usage, , This help
 AppGen*/
 
 void makeImage(const vector<bool>& pattern, const Image& img, bool horizontal)

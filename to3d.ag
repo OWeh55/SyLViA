@@ -26,7 +26,7 @@ using namespace std;
 
   opt: s, smear, int, sSize, Size for averaging, 0
   opt: n, nocolor, void, noColor, Ignore texture, false
-
+  opt2:   storage of texture depends on output format
   opt: d, display, void, display, display images, false
   opt: D, debug, Void, debug, print debug information, false
   opt: v, verbose, Void, verbose, be verbose, false
@@ -53,10 +53,10 @@ public:
 
 typedef matrix<SPixel> SWorld;
 
-class sBox
+class SelectBox
 {
 public:
-  sBox(double xMin, double xMax,
+  SelectBox(double xMin, double xMax,
        double yMin, double yMax,
        double zMin, double zMax):
     xMin(xMin), xMax(xMax),
@@ -114,7 +114,7 @@ void updateStateImage(const SWorld& world, Image& state)
     }
 }
 
-void selectBoxPixel(SWorld& world, sBox& box)
+void selectPixelInBox(SWorld& world, SelectBox& box)
 {
   int xSize = world.rows();
   int ySize = world.cols();
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
   /*AppGen:MainEnd*/
   try
     {
-      sBox selectBox(xMin, xMax, yMin, yMax, zMin, zMax);
+      SelectBox selectBox(xMin, xMax, yMin, yMax, zMin, zMax);
       string textureFN;
       string phaseFN;
       string calibFN;
@@ -377,7 +377,7 @@ int main(int argc, char** argv)
       updateStateImage(world, state);
       if (verbose)
         cout << "selecting box" << endl;
-      selectBoxPixel(world, selectBox);
+      selectPixelInBox(world, selectBox);
 
       updateStateImage(world, state);
 
@@ -415,13 +415,15 @@ int main(int argc, char** argv)
           {
             IPoint w(x, y);
             writeTriangle(os,
-                          w, w + dx, w + dy,
+                          // w, w + dx, w + dy,
+                          w, w + dy, w + dx,
                           world,
                           maxVal,
                           maxLength,
                           noColor);
             writeTriangle(os,
-                          w + dy, w + dx, w + dx + dy,
+                          // w + dy, w + dx, w + dx + dy,
+                          w + dx, w + dy, w + dx + dy,
                           world,
                           maxVal,
                           maxLength,
