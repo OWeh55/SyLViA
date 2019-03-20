@@ -29,7 +29,7 @@ using namespace std;
 
   opt: n, nframes, int, framesToAverage, frames to average per pattern, 1
 
-  opt: o, output, string, outFile, Name of output files, "v23d"
+  opt: o, output, String, outFile, Name of output files, "v23d"
   opt2:  use -o- for no output
   opt: i, interactive, void, interactive, Decide interactively about writing result, false
   opt: p, phaseresolution, int, phaseResolution, Subdivision of phase, 32
@@ -163,6 +163,10 @@ int main(int argc, char** argv)
           if (verbose)
             cout << "extracting sequence " <<  sequenceBoundaries[i] << " ... " << sequenceBoundaries[i + 1] << endl;
 
+          string iString(to_string(i));
+          while (iString.size() < 3)
+            iString = "0" + iString;
+
           ColorImage cImg;
           ColorImage deviation;
           vector<ImageD> seq;
@@ -174,6 +178,28 @@ int main(int argc, char** argv)
                        readWindow,
                        framesToAverage,
                        seq, cImg, deviation);
+
+          if (debug & 4)
+            {
+              for (int i = 0; i < seq.size(); i++)
+                {
+                  FileName pOut;
+                  pOut.setPath(resDir.getFullName());
+                  pOut.setName(outFile + "_" +
+                               iString + "_pattern+" +
+                               sequenceDescription[i]);
+                  pOut.setExtension("pgm");
+                  Image pattern;
+                  pattern.create(seq[i].xsize, seq[i].ysize, 255);
+                  WindowWalker w(pattern);
+                  for (w.init(); !w.ready(); w.next())
+                    {
+                      pattern.setPixelLimited(w, 128 + seq[i].getPixel(w));
+                    }
+                  pattern.write(pOut);
+                  cout << "debug: wrote " << pOut.getFullName() << endl;
+                }
+            }
 
           ImageD phase;
           Image mask;
@@ -203,9 +229,6 @@ int main(int argc, char** argv)
 
           if (reallyWrite)
             {
-              string iString(to_string(i));
-              while (iString.size() < 3)
-                iString = "0" + iString;
 
               FileName texture;
               texture.setPath(resDir.getFullName());

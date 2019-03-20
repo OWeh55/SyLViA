@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include "v23d.h"
 #include "image.h"
 #include "FileName.h"
 
@@ -27,8 +28,10 @@ using namespace std;
   opt: s, smear, int, sSize, Size for averaging, 0
   opt: n, nocolor, void, noColor, Ignore texture, false
   opt2:   storage of texture depends on output format
+
+  opt: o, outfilename, String, outFile, Name of output file, ""
   opt: d, display, void, display, display images, false
-  opt: D, debug, Void, debug, print debug information, false
+  opt: D, debug, Int, debug, print debug information, 0
   opt: v, verbose, Void, verbose, be verbose, false
   opt: h, help, usage, , Help
 AppGen*/
@@ -57,8 +60,8 @@ class SelectBox
 {
 public:
   SelectBox(double xMin, double xMax,
-       double yMin, double yMax,
-       double zMin, double zMax):
+            double yMin, double yMax,
+            double zMin, double zMax):
     xMin(xMin), xMax(xMax),
     yMin(yMin), yMax(yMax),
     zMin(zMin), zMax(zMax)
@@ -271,6 +274,9 @@ int main(int argc, char** argv)
       string textureFN;
       string phaseFN;
       string calibFN;
+      FileName fn(baseFileName);
+      if (outFile.empty())
+        outFile = fn.getPath() + "/" + fn.getBaseName();
       fileNames(baseFileName, textureFN, phaseFN, calibFN);
 
       ColorImage textureImage;

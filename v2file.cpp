@@ -139,6 +139,7 @@ void readSequence(VideoFile& v,
           rgb[i].setPixel(w, pColor + nColor);
         }
       seq[i].adaptLimits();
+      // cout << i << ": " << seq[i].minValue() << " .. " << seq[i].maxValue() << endl;
       /*
       Show(GRAY,seq[i],"pattern " + to_string(i));
       GetChar();

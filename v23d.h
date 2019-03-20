@@ -13,7 +13,6 @@ extern int xSize;
 extern int ySize;
 
 // sequence of pattern
-
 // number of different pattern (positiv+negativ) including black/white marker
 extern int sequenceLength;
 extern std::string sequenceDescription;

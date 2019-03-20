@@ -38,7 +38,7 @@ calibrate: calibrate.o calMarker.o v2file.o FileName.o $(MODELS) $(ICEDIR)/lib/$
 	$(CXX) $(LOPT) $(LIBRARY) -o calibrate calibrate.o FileName.o calMarker.o v2file.o  $(MODELS) $(LIBS)
 
 to3d: to3d.o v2file.o FileName.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o FileName.o v2file.o $(MODELS) $(LIBS)	
+	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o v2file.o FileName.o $(MODELS) $(LIBS)	
 
 testcalib: testcalib.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o  $(MODELS) $(LIBS)	
