@@ -26,6 +26,7 @@ using namespace std;
   opt: l, maxlength, double, maxLength, maximum length of triangle edges, 1000
 
   opt: s, smear, int, sSize, Size for averaging, 0
+  opt: f, fillphases, int, fillSize, Interpolate unknown phases from neighbours, 0
   opt: n, nocolor, void, noColor, Ignore texture, false
   opt2:   storage of texture depends on output format
 
@@ -285,6 +286,8 @@ int main(int argc, char** argv)
       Image phaseImage;
       phaseImage.read(phaseFN);
 
+
+
       int xSize = textureImage.xsize;
       int ySize = textureImage.ysize;
       if (phaseImage.xsize != xSize || phaseImage.ysize != ySize)
@@ -294,6 +297,41 @@ int main(int argc, char** argv)
         {
           Show(ON, textureImage, "texture");
           Show(GRAY, phaseImage, "phase");
+        }
+
+      // improvements of phases
+      if (fillSize > 0)
+        {
+          if (verbose)
+            {
+              cout << "interpolating unknown phases from neighbours" << endl;
+            }
+          Image tempPhaseImage;
+          tempPhaseImage.copy(phaseImage);
+          // for the moment we use a 3*3 square independent of fillSize
+          for (int y = 1; y < ySize - 1; y++)
+            for (int x = 1; x < xSize - 1; x++)
+              {
+                if (phaseImage.getPixel(x, y) == 0) // phase invalid
+                  {
+                    int counter = 0;
+                    double phaseSum = 0.0;
+                    for (int yn = y - 1; yn <= y + 1; yn++)
+                      for (int xn = x - 1; xn <= x + 1; xn++)
+                        {
+                          double phaseN = tempPhaseImage.getPixel(xn, yn);
+                          if (phaseN > 0)
+                            {
+                              counter++;
+                              phaseSum += phaseN;
+                            }
+                        }
+                    if (counter > 1) // TODO: tune >n !!
+                      {
+                        phaseImage.setPixel(x, y, phaseSum / counter);
+                      }
+                  }
+              }
         }
 
       // create world matrix
