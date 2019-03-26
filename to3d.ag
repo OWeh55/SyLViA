@@ -29,7 +29,7 @@ using namespace std;
   opt: f, fillphases, int, fillSize, Interpolate unknown phases from neighbours, 0
   opt: n, nocolor, void, noColor, Ignore texture, false
   opt2:   storage of texture depends on output format
-
+  opt: r, rotate, Void, rotateC, Rotate coordinates, false
   opt: o, outfilename, String, outFile, Name of output file, ""
   opt: d, display, void, display, display images, false
   opt: D, debug, Int, debug, print debug information, 0
@@ -223,7 +223,12 @@ void writePoints(ofstream& os, const SWorld& world)
       {
         const SPixel& here = world[x][y];
         if (here.valid && here.selected)
-          os << "P " << here.position.x << " " << here.position.y << " " << here.position.z << endl;
+	  {
+	    if (!rotateC)
+	      os << "P " << here.position.x << " " << here.position.y << " " << here.position.z << endl;
+	    else
+	      os << "P " << here.position.x << " " << -here.position.y << " " << -here.position.z << endl;
+	  }
       }
 }
 
