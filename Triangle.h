@@ -1,5 +1,5 @@
 /*
- * 
+ *
  */
 #ifndef V23D_TRIANGLE_H
 #define V23D_TRIANGLE_H
@@ -11,12 +11,12 @@ namespace ice
   public:
     /** standard constructor
      */
-    TrianglePL(const vector<Point> &pl, int i1, int i2, int i3):
+    TrianglePL(const vector<Point>& pl, int i1, int i2, int i3):
       i1(i1), i2(i2), i3(i3), pl(&pl)
     {
 
     }
-    
+
     /*
     ** get Corner
      */
@@ -47,17 +47,17 @@ namespace ice
     }
     const Point& P3() const
     {
-            return (*pl)[i3];
+      return (*pl)[i3];
     }
 
     const ice::Triangle getTriangle() const
     {
-      return ice::Triangle( (*pl)[i1], (*pl)[i2], (*pl)[i3]);
+      return ice::Triangle((*pl)[i1], (*pl)[i2], (*pl)[i3]);
     }
 
   private:
-    int i1,i2,i3;
-    const vector<Point> *pl;
+    int i1, i2, i3;
+    const vector<Point>* pl;
   };
 }
 #endif

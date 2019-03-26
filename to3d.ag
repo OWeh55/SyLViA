@@ -223,12 +223,12 @@ void writePoints(ofstream& os, const SWorld& world)
       {
         const SPixel& here = world[x][y];
         if (here.valid && here.selected)
-	  {
-	    if (!rotateC)
-	      os << "P " << here.position.x << " " << here.position.y << " " << here.position.z << endl;
-	    else
-	      os << "P " << here.position.x << " " << -here.position.y << " " << -here.position.z << endl;
-	  }
+          {
+            if (!rotateC)
+              os << "P " << here.position.x << " " << here.position.y << " " << here.position.z << endl;
+            else
+              os << "P " << here.position.x << " " << -here.position.y << " " << -here.position.z << endl;
+          }
       }
 }
 
