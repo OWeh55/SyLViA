@@ -12,26 +12,25 @@ using namespace std;
   prog: Create image sequence
   para: filename, optional, string, fnb, Filename for images/video, ""
 
-  opt: X, xsize, int, sizeX, Image size X, 848
-  opt: Y, ysize, int, sizeY, Image size Y, 480
   opt: H, horizontal, void, horizontal, Horizontal pattern, false
 
-  opt: S, sequence, string, sequence, Pattern description, "P4G1-9cw"
-  opt2:  p + size  - phase shift
-  opt2:  P + size  - phase shift (+inverse)
-  opt2:  g + range - gray code
-  opt2:  G + range - gray code (+inverse)
-  opt2:  b + range - binary code
-  opt2:  B + range - binary code (+inverse)
-  opt2:  c         - black
-  opt2:  w         - white
-
-  opt: r, repeat, int, repeat, Repetitions of frame, 3
+  opt: s, sequence, string, sequence, Pattern description, "sc123456789"
+  opt2:  b - black
+  opt2:  w - white
+  opt2:  c - cosinus
+  opt2:  s - sinus
+  opt2:  0..9,A..F - gray code bit 0 .. 15 (upper case letters!)
+  opt2:  after each pattern the inverse pattern is added.
+  opt2:  Use -i to switch off this.
+  opt: i, noinverse, void, noInverse, Do not add inverse pattern, false
+  opt: r, repeat, int, repeat, Repetitions of each pattern, 3
   opt: R, srepeat, int, srepeat, Repetitions of sequence, 1
 
-  opt: s, singleimage, void, singleImage, Create single image, false
+  opt: D, debugimage, void, singleImage, Create single image with patterns (for debug), false
 
   opt: f, framespersecond, int, fps, Frames per second, 30
+  opt: X, xsize, int, sizeX, Image size X, 848
+  opt: Y, ysize, int, sizeY, Image size Y, 480
 
   opt: d, display, void, display, Show images, false
   opt2:  includes wait = true
@@ -39,6 +38,18 @@ using namespace std;
   opt: v, verbose, Void, verbose, Be verbose, false
   opt: h, help, usage, , This help
 AppGen*/
+
+void writeImage(const Image& img, int repeat, VideoFile& vf)
+{
+  if (vf.isOpen())
+    {
+      for (int i = 0; i < repeat; i++)
+        vf.write(img);
+    }
+
+  if (wait)
+    GetChar();
+}
 
 void makeImage(const vector<bool>& pattern, const Image& img, bool horizontal)
 {
@@ -62,49 +73,27 @@ void makeImage(const vector<bool>& pattern, const Image& img, bool horizontal)
     }
 }
 
-void writeImage(const Image& img, int repeat, VideoFile& vf)
+vector<bool> makePhaseShift(int nCols, int phase, int nStripes)
 {
-  if (vf.isOpen())
-    {
-      for (int i = 0; i < repeat; i++)
-        vf.write(img);
-    }
-
-  if (wait)
-    GetChar();
-}
-
-vector<bool> makePhaseShift(int nCols, int phase, int nPattern)
-{
+  if (nCols < 4)
+    throw "phase shift must have cycle length >= 3";
   vector<bool> result;
-  for (int i = 0; i < nPattern; i++)
+  for (int i = 0; i < nStripes; i++)
     {
-      int k = ((i - phase) % nCols + nCols) % nCols;
+      int k = Mod(i - phase, nCols);
       result.push_back(k < nCols / 2);
     }
   return result;
 }
 
-vector<bool> makeGrayCode(int bit, int nPattern)
+vector<bool> makeGrayCode(int bit, int nStripes)
 {
   vector<bool> result;
   int mask = 1 << bit;
-  for (int i = 0; i < nPattern; ++i)
+  for (int i = 0; i < nStripes; ++i)
     {
       int graycode = i ^ (i >> 1);
       result.push_back((graycode & mask) != 0);
-    }
-  return result;
-}
-
-vector<bool> makeBinaryCode(int bit, int nPattern)
-{
-  vector<bool> result;
-  int mask = 1 << bit;
-  for (int i = 0; i < nPattern; ++i)
-    {
-      int binaryCode = i;
-      result.push_back((binaryCode & mask) != 0);
     }
   return result;
 }
@@ -162,85 +151,128 @@ int main(int argc, char** argv)
       if (display)
         Show(ON, img);
 
-      int nPattern = horizontal ? sizeY : sizeX;
+      int nStripes = horizontal ? sizeY : sizeX;
       vector<vector<bool> > patterns;
 
       if (verbose)
-        cout << "Erzeuge Muster" << endl;
+        {
+          cout << "Generating patterns " << sequence;
+          if (noInverse)
+            cout << " w/o inverse pattern";
+          else
+            cout << " with inverse pattern";
+          cout << endl;
+        }
+
+      // create extended sequence description from basic description
+      string xSequence;
+      // for compatibility we add a black to white transition if not yet contained
+      bool hasBlack = false;
+      bool hasWhite = false;
+      for (int i = 0; i < sequence.size(); i++)
+        {
+          char c = sequence[i];
+          switch (c)
+            {
+            case 's':
+              xSequence += "s4";
+              if (!noInverse)
+                xSequence += "S4";
+              break;
+            case 'c':
+              xSequence += "c4";
+              if (!noInverse)
+                xSequence += "C4";
+              break;
+            case 'b':
+              xSequence += "b0"; // number is dummy here
+              hasBlack = true;
+              if (!noInverse)
+                {
+                  xSequence += "B0";
+                  hasWhite = true;
+                }
+              break;
+            case 'w':
+              xSequence += "B0"; // number is dummy here
+              hasWhite = true;
+              if (!noInverse)
+                {
+                  xSequence += "b0";
+                  hasBlack = true;
+                }
+              break;
+            default:
+              if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))
+                {
+                  xSequence += "g";
+                  xSequence += c;
+                  if (!noInverse)
+                    {
+                      xSequence += "G";
+                      xSequence += c;
+                    }
+                }
+              else
+                throw "unknown char in sequence";
+            }
+        }
+
+      if (! hasBlack || ! hasWhite)
+        xSequence += "b0B0";
+
+      cout << sequence << " -> " << xSequence << endl;
+
 
       int i = 0;
-      while (i < sequence.size())
+      while (i < xSequence.size())
         {
-          char pc = sequence[i];
+          char pc = xSequence[i++];
+          int  para = getP(xSequence, i);
           if (verbose)
             {
-              cout << pc;
+              cout << i << ": " << pc << para << " ";
               cout.flush();
             }
           switch (pc)
             {
-            case 'P':
-            case 'p':
-            {
-              i++;
-              int nCols = getP(sequence, i);
-              for (int k = 0; k < nCols / 2; k++)
-                {
-                  patterns.push_back(makePhaseShift(nCols, k, nPattern));
-                  if (pc == 'P')
-                    patterns.push_back(inverse(patterns.back()));
-                }
+            case 'b':// black
+              patterns.push_back(vector<bool>(nStripes, true));
               break;
-            }
-            case 'g':
-            case 'G':
-            {
-              i++;
-              int first, last;
-              getRange(sequence, i, first, last);
-              for (int i = first; i <= last; i++)
-                {
-                  patterns.push_back(makeGrayCode(i, nPattern));
-                  if (pc == 'G')
-                    patterns.push_back(inverse(patterns.back()));
-                }
+            case 'B':// inverse black == white
+              patterns.push_back(vector<bool>(nStripes, false));
               break;
-            }
-            case 'b':
-            case 'B':
-            {
-              i++;
-              int first, last;
-              getRange(sequence, i, first, last);
-              for (int i = first; i <= last; i++)
-                {
-                  patterns.push_back(makeBinaryCode(i, nPattern));
-                  if (pc == 'B')
-                    patterns.push_back(inverse(patterns.back()));
-                }
+            case 's':
+              patterns.push_back(makePhaseShift(para, 0, nStripes));
               break;
-            }
+            case 'S':
+              patterns.push_back(inverse(makePhaseShift(para, 0, nStripes)));
+              break;
             case 'c':
-            {
-              i++;
-              patterns.push_back(vector<bool>(nPattern, true));
+              patterns.push_back(makePhaseShift(para, para / 4, nStripes));
               break;
-            }
-            case 'w':
-            {
-              i++;
-              patterns.push_back(vector<bool>(nPattern, false));
+            case 'C':
+              patterns.push_back(inverse(makePhaseShift(para, para / 4, nStripes)));
               break;
-            }
+
+            case 'g':
+              patterns.push_back(makeGrayCode(para, nStripes));
+              break;
+            case 'G':
+              patterns.push_back(inverse(makeGrayCode(para, nStripes)));
+              break;
+
             default:
               throw "Wrong character in description";
             }
         }
       if (verbose)
         cout << endl;
+      int nPatterns = patterns.size();
+      if (nPatterns < 1)
+        throw "no pattern generated";
       if (singleImage)
         {
-          int nPatterns = patterns.size();
           if (horizontal)
             {
               for (int y = 0; y < sizeY; y++)
@@ -276,7 +308,7 @@ int main(int argc, char** argv)
           for (int r = 0; r < srepeat; r++)
             {
               if (verbose)
-                cout << "Sequenz " << (r + 1) << " von " << srepeat << endl;
+                cout << "Sequence " << (r + 1) << " of " << srepeat << endl;
               for (int k = 0; k < patterns.size(); k++)
                 {
                   makeImage(patterns[k], img, horizontal);
@@ -287,7 +319,7 @@ int main(int argc, char** argv)
     }
   catch (const char* msg)
     {
-      cerr << "Exception: " << msg << endl;
+      cerr << endl << "Exception: " << msg << endl;
     }
   return OK;
 }
