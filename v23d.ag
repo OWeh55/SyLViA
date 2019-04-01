@@ -28,7 +28,7 @@ using namespace std;
   opt: Y, ymax, int, Ymax, Window y maximum, -1
 
   opt: n, nframes, int, framesToAverage, frames to average per pattern, 1
-
+  opt: a, agc, void, normalizeAGC, Normalize gain control, false
   opt: o, output, String, outFile, Name of output files, "v23d"
   opt2:  use -o- for no output
   opt: i, interactive, void, interactive, Decide interactively about writing result, false
@@ -180,6 +180,25 @@ int main(int argc, char** argv)
                        readWindow,
                        framesToAverage,
                        seq, cImg, deviation);
+
+          if (normalizeAGC)
+            {
+              for (int i = 0; i < seq.size(); i++)
+                {
+                  double sum = 0.0;
+                  WindowWalker w(seq[i]);
+                  for (w.init(); !w.ready(); w.next())
+                    {
+                      sum += seq[i].getPixel(w);
+                    }
+                  sum /= seq[i].xsize * seq[i].ysize;
+                  // cout << i << ": " << sum << endl;
+                  for (w.init(); !w.ready(); w.next())
+                    {
+                      seq[i].setPixel(w, seq[i].getPixel(w) - sum);
+                    }
+                }
+            }
 
           if (debug & 4)
             {
