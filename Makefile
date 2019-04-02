@@ -31,8 +31,8 @@ endif
 
 all: v23d patterngen genCalib calibrate to3d
 
-v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o v23d v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o FileName.o $(LIBS)
+v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o v2sequence.o FileName.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o v23d v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o v2sequence.o FileName.o $(LIBS)
 
 calibrate: calibrate.o calMarker.o v2file.o FileName.o $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o calibrate calibrate.o FileName.o calMarker.o v2file.o  $(MODELS) $(LIBS)
@@ -45,6 +45,9 @@ testcalib: testcalib.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 
 testcam: testcam.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o testcam testcam.o  $(MODELS) $(LIBS)	
+
+patterngen: patterngen.o v2sequence.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o patterngen patterngen.o v2sequence.o $(LIBS)	
 
 %.o:%.c
 	$(CC) $(COPT) $(INCLUDE) -c $*.c
