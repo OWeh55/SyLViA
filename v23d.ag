@@ -90,10 +90,44 @@ int main(int argc, char** argv)
         {
           cout << "sequence: " << sequenceDescription
                << "   (" << sequenceLength << " pattern) " << endl;
-          for (auto p : sequencePatterns)
-            cout << string(p) << " " ;
-          cout << endl;
+          /*
+           * for (auto p : sequencePatterns)
+                 *   cout << string(p) << " " ;
+           * cout << endl;
+           */
         }
+
+      // check if sequence has black and white pattern
+      int blackidx = -1;
+      int whiteidx = -1;
+      for (int i = 0; i < sequenceLength; i++)
+        {
+          if (sequencePatterns[i].type == 'b')
+            blackidx = i;
+          else if (sequencePatterns[i].type == 'B')
+            whiteidx = i;
+        }
+
+      if (blackidx < 0 || whiteidx < 0 || (whiteidx != (blackidx + 1) % sequenceLength))
+        throw "sequence doesnt contain black and white pattern in consecutive frames";
+      // reorganize description - starts with white pattern
+
+      vector<pattern_t> sPatterns;
+      int i;
+      for (i = whiteidx; i != blackidx; i = (i + 1) % sequenceLength)
+        {
+          sPatterns.push_back(sequencePatterns[i]);
+        }
+      sPatterns.push_back(sequencePatterns[i]);
+
+#if 0
+      for (auto p : sPatterns)
+        cout << string(p) << " " ;
+      cout << endl;
+#endif
+
+
+
       FileName filename(fn);
 
       bool shallWriteResult = false;
@@ -177,7 +211,7 @@ int main(int argc, char** argv)
 
           ColorImage cImg;
           ColorImage deviation;
-          vector<ImageD> seq;
+          vector<ImageD> readSeq;
 
           readSequence(v,
                        sequenceBoundaries[i], sequenceBoundaries[i + 1],
@@ -185,11 +219,41 @@ int main(int argc, char** argv)
                        'g',  // color mode
                        readWindow,
                        framesToAverage,
-                       seq, cImg, deviation);
+                       readSeq, cImg, deviation);
+
+          if (readSeq.size() * 2 != sequenceLength - 2)
+            throw "read wrong number of images in sequence";
+
+          // assign read images to pattern
+          vector<ImageD> seq(readSeq.size());
+          for (int i = 0; i < readSeq.size(); i++)
+            {
+              int patternIndex = i * 2 + 1; // we have not read first (white) and last (black) pattern
+              pattern_t p = sPatterns[patternIndex];
+              // cout << string(p) << endl;
+              switch (p.type)
+                {
+                case 's':
+                  seq[0] = readSeq[i];
+                  break;
+                case 'c':
+                  seq[1] = readSeq[i];
+                  break;
+                case 'g':
+                  if (p.parameter > 0 && p.parameter + 1 < seq.size())
+                    seq[p.parameter + 1] = readSeq[i];
+                  else
+                    throw "graycode index of pattern out of range";
+                  break;
+                default:
+                  throw "unexpected pattern type";
+                }
+            }
 
           if (normalizeAGC)
             {
-              for (int i = 0; i < seq.size(); i++)
+              // we "normalize" only the phase shift pattern
+              for (int i = 0; i < 2; i++)
                 {
                   double sum = 0.0;
                   WindowWalker w(seq[i]);
@@ -208,13 +272,14 @@ int main(int argc, char** argv)
 
           if (debug & 4)
             {
+              string pNames = "sc123456789ABCDEF";
               for (int i = 0; i < seq.size(); i++)
                 {
                   FileName pOut;
                   pOut.setPath(resDir.getFullName());
                   pOut.setName(outFile + "_" +
                                iString + "_pattern+" +
-                               sequenceDescription[i]);
+                               pNames[i]);
                   pOut.setExtension("pgm");
                   Image pattern;
                   pattern.create(seq[i].xsize, seq[i].ysize, 255);
