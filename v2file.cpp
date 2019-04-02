@@ -76,7 +76,7 @@ void readNImages(VideoFile& v, int frameNr, ColorImage& img, int n)
   double f = 1.0 / n;
   for (w.init(); !w.ready(); w.next())
     {
-      img.setPixel(w, vs.getPixel(w)*f);
+      img.setPixel(w, vs.getPixel(w) * f);
     }
 }
 
@@ -93,6 +93,7 @@ void readSequence(VideoFile& v,
   int xo, yo, mv, fps;
   v.getPara(xo, yo, mv, fps);
 
+  // adapt window size to size of frames of video
   Window window(readWindow);
   if (window.p2.x >= xo)
     window.p2.x = xo - 1;
@@ -114,7 +115,7 @@ void readSequence(VideoFile& v,
 
   vector<ColorImage> rgb(nPattern);
 
-  for (int i = 0; i < nPattern; i++) // all pattern pairs (pos+neg)
+  for (int i = 0; i < nPattern; i++) // all pattern pairs (pos + neg)
     {
       int posIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength / 2);
       int negIdx = RoundInt(leftBoundary + i * (2 * patternLength) + patternLength + patternLength / 2);

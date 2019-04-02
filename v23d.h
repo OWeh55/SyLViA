@@ -5,6 +5,7 @@
 #include <string>
 
 #include <image.h>
+#include "v2sequence.h"
 
 // globals for convenience
 // video
@@ -15,7 +16,8 @@ extern int ySize;
 // sequence of pattern
 // number of different pattern (positiv+negativ) including black/white marker
 extern int sequenceLength;
-extern std::string sequenceDescription;
+//extern std::string sequenceDescription;
+extern std::vector<pattern_t> sequencePatterns;
 
 // program organization
 extern bool verbose;

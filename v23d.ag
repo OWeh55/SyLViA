@@ -9,6 +9,7 @@
 
 #include "v23d.h"
 #include "v2file.h"
+#include "v2sequence.h"
 
 /*AppGen:Global*/
 
@@ -83,11 +84,16 @@ int main(int argc, char** argv)
       Window readWindow(Xmin, Ymin, Xmax, Ymax);
 
       // prepare globals for sequence
-      sequenceLength = sequenceDescription.length() * 2 + 2;
+      vector<pattern_t> sequencePatterns = vSequence(sequenceDescription, false);
+      sequenceLength = sequencePatterns.size();
       if (verbose)
-        cout << "sequence: " << sequenceDescription
-             << "   (" << sequenceLength << " pattern) " << endl;
-
+        {
+          cout << "sequence: " << sequenceDescription
+               << "   (" << sequenceLength << " pattern) " << endl;
+          for (auto p : sequencePatterns)
+            cout << string(p) << " " ;
+          cout << endl;
+        }
       FileName filename(fn);
 
       bool shallWriteResult = false;
