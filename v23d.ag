@@ -41,7 +41,7 @@ using namespace std;
   opt: T, threshold, Double, thresholdg, Threshold for graycode detection, 5
   opt: t, threshold, Double, thresholdp, Threshold for phase detection, 1
 
-  opt: S, sequence, String, sequenceDescription, Description of sequence, "sc123456789"
+  opt: S, sequence, String, sequenceDescription, Description of sequence, "987654321sc"
   opt2: Meaning of characters
   opt2: s - sinus function
   opt2: c - cosinus function
