@@ -71,7 +71,7 @@ clean_files:
 clean:	clean_files dep
 
 dep:
-	-rm depend 
+	-rm -f depend 
 	touch depend
 	$(CXX) -M $(COPT) $(INCLUDE) *.cpp >> depend	
 
