@@ -138,7 +138,7 @@ int main(int argc, char** argv)
         {
           if (verbose)
             {
-              cout << "Generating patterns with extended sequence " << xInputSequence;
+              cout << "Using extended sequence description " << xInputSequence;
               cout << endl;
             }
           xSequence = xInputSequence;
@@ -177,23 +177,23 @@ int main(int argc, char** argv)
             case 'B':// inverse black == white
               patterns.push_back(vector<bool>(nStripes, false));
               break;
-            case 's':
+            case 's':// sin wave
               patterns.push_back(makePhaseShift(para, 0, nStripes));
               break;
-            case 'S':
+            case 'S':// inverse sin wave
               patterns.push_back(inverse(makePhaseShift(para, 0, nStripes)));
               break;
-            case 'c':
+            case 'c':// cosinus
               patterns.push_back(makePhaseShift(para, para / 4, nStripes));
               break;
-            case 'C':
+            case 'C':// inverse cosinus
               patterns.push_back(inverse(makePhaseShift(para, para / 4, nStripes)));
               break;
 
-            case 'g':
+            case 'g':// gray code bit para
               patterns.push_back(makeGrayCode(para, nStripes));
               break;
-            case 'G':
+            case 'G':// inverse gray code bit para
               patterns.push_back(inverse(makeGrayCode(para, nStripes)));
               break;
 
@@ -208,6 +208,8 @@ int main(int argc, char** argv)
         throw "no pattern generated";
       if (singleImage)
         {
+          // for debugging we create one image with
+          // all pattern (side by side or on top of each other)
           if (horizontal)
             {
               for (int y = 0; y < sizeY; y++)
@@ -250,6 +252,7 @@ int main(int argc, char** argv)
                   writeImage(img, repeat, vf);
                 }
             }
+          vf.close();
         }
     }
   catch (const char* msg)

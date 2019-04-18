@@ -13,7 +13,7 @@
 using namespace std;
 
 /*AppGen
-  prog: Extract 3d data for triangle viewer
+  prog: Extract 3d data in different formats
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
   opt: c, calibfile, string, calibFilename, Name of calibration file,""
   opt: p, phaseresolution, double, phaseResolution, Resolution of phase image, 32.0
@@ -27,10 +27,14 @@ using namespace std;
 
   opt: s, smear, int, sSize, Size for averaging, 0
   opt: f, fillphases, int, fillSize, Interpolate unknown phases from neighbours, 0
+  opt: o, outfile, string, outFile, Name of output file, "world.tv"
+  opt2: extension controls type of data
+  opt2: .tv - triangle viewer format (tv)
+  opt2: .xyz - point list with coordinates x, y and z
+  opt2: default (other extensions) is pointlist with x, y and z and colors r, g, b
   opt: n, nocolor, void, noColor, Ignore texture, false
   opt2:   storage of texture depends on output format
   opt: r, rotate, Void, rotateC, Rotate coordinates, false
-  opt: o, outfilename, String, outFile, Name of output file, ""
   opt: d, display, void, display, display images, false
   opt: D, debug, Int, debug, print debug information, 0
   opt: v, verbose, Void, verbose, be verbose, false
@@ -38,7 +42,7 @@ using namespace std;
 AppGen*/
 
 // class that contains all 3d data (pointcloud level)
-// does not contain u,v that are implizit in array idx
+// does not contain u,v these are implizit in array idx
 // at the moment more or less a struct
 class SPixel
 {
@@ -99,7 +103,9 @@ void compute3d(const SLModel& model, SWorld& world)
             here.valid = true;
           }
         else
-          here.valid = false;
+          {
+            here.valid = false;
+          }
       }
 }
 
@@ -131,7 +137,7 @@ void selectPixelInBox(SWorld& world, SelectBox& box)
       }
 }
 
-void maxColorValue(ColorValue& maxVal, const ColorValue& c)
+void updateMaxColorValue(ColorValue& maxVal, const ColorValue& c)
 {
   if (c.red > maxVal.red)
     maxVal.red = c.red;
@@ -150,8 +156,11 @@ ColorValue getMaxColorValue(const SWorld& world)
   for (int y = 0; y < ySize; y++)
     for (int x = 0; x < xSize; x++)
       {
-        const SPixel& here = world[x][y];
-        maxColorValue(maxColor, here.color);
+        if (world[x][y].valid && world[x][y].selected)
+          {
+            const SPixel& here = world[x][y];
+            updateMaxColorValue(maxColor, here.color);
+          }
       }
   return maxColor;
 }
@@ -189,6 +198,8 @@ void smear(SWorld& world, int sSize)
               }
             if (vCount > 0)
               newXyz[x][y] = xyzSum / vCount;
+            else
+              newXyz[x][y] = thisPos;
           }
       }
   for (int y = 0; y < ySize; y++)
@@ -213,7 +224,7 @@ void numberValidAndSelectedPixel(SWorld& world)
       }
 }
 
-void writePoints(ofstream& os, const SWorld& world)
+void tvWritePoints(ofstream& os, const SWorld& world)
 {
   int xSize = world.rows();
   int ySize = world.cols();
@@ -232,12 +243,12 @@ void writePoints(ofstream& os, const SWorld& world)
       }
 }
 
-void writeTriangle(ostream& os,
-                   IPoint p1, IPoint p2, IPoint p3,
-                   const SWorld& world,
-                   const ColorValue& maxVal,
-                   double maxLength,
-                   bool ignoreColor)
+void tvWriteTriangle(ostream& os,
+                     IPoint p1, IPoint p2, IPoint p3,
+                     const SWorld& world,
+                     const ColorValue& maxVal,
+                     double maxLength,
+                     bool ignoreColor)
 {
   int n1 = world[p1.x][p1.y].nr;
   int n2 = world[p2.x][p2.y].nr;
@@ -260,9 +271,18 @@ void writeTriangle(ostream& os,
               ColorValue c2 = world[p2.x][p2.y].color;
               ColorValue c3 = world[p3.x][p3.y].color;
               ColorValue cc = (c1 + c2 + c3) * 0.3333;
-              os << "C " << (double)cc.red / maxVal.red;
-              os << " " << (double)cc.green / maxVal.green;
-              os << " " << (double)cc.blue / maxVal.blue << endl;
+#if 0
+              int maxv = 1;
+              if (cc.red > maxv) maxv = cc.red;
+              if (cc.green > maxv) maxv = cc.green;
+              if (cc.blue > maxv) maxv = cc.blue;
+              double fak = 255.0 / maxv;
+#else
+              double fak = 1.0;
+#endif
+              os << "C " << cc.red* fak / maxVal.red;
+              os << " " << cc.green* fak / maxVal.green;
+              os << " " << cc.blue* fak / maxVal.blue << endl;
             }
           os << "T " << n1 << " " << n2 << " " << n3 << endl;
         }
@@ -281,8 +301,15 @@ int main(int argc, char** argv)
       string phaseFN;
       string calibFN;
       FileName fn(baseFileName);
+
       if (outFile.empty())
         outFile = fn.getPath() + "/" + fn.getBaseName();
+      else if (outFile[0] == '.') // only extension given
+        outFile = fn.getPath() + "/" + fn.getBaseName() + outFile;
+
+      FileName outFileName(outFile);
+      cout << "outFileName: " << string(outFileName) << endl;
+
       fileNames(baseFileName, textureFN, phaseFN, calibFN);
 
       ColorImage textureImage;
@@ -290,8 +317,6 @@ int main(int argc, char** argv)
 
       Image phaseImage;
       phaseImage.read(phaseFN);
-
-
 
       int xSize = textureImage.xsize;
       int ySize = textureImage.ysize;
@@ -432,8 +457,9 @@ int main(int argc, char** argv)
 
       if (verbose)
         cout << "getting max color" << endl;
-
       ColorValue maxVal = getMaxColorValue(world);
+      if (verbose)
+        cout << "maximum color value: " << maxVal << endl;
 
       // "low pass" xyz (test)
       if (sSize > 0)
@@ -449,9 +475,11 @@ int main(int argc, char** argv)
         cout << "writing points" << endl;
 
       // file for triangle viewer
-      ofstream os("xyz.tv");
+      string ofn(outFileName);
+      ofstream os(ofn);
+
       // write valid and selected points to 3d file
-      writePoints(os, world);
+      tvWritePoints(os, world);
 
       IPoint dx(1, 0);
       IPoint dy(0, 1);
@@ -463,20 +491,20 @@ int main(int argc, char** argv)
         for (int x = 0; x < xSize - 1; x++)
           {
             IPoint w(x, y);
-            writeTriangle(os,
-                          // w, w + dx, w + dy,
-                          w, w + dy, w + dx,
-                          world,
-                          maxVal,
-                          maxLength,
-                          noColor);
-            writeTriangle(os,
-                          // w + dy, w + dx, w + dx + dy,
-                          w + dx, w + dy, w + dx + dy,
-                          world,
-                          maxVal,
-                          maxLength,
-                          noColor);
+            tvWriteTriangle(os,
+                            //w, w + dx, w + dy,
+                            w, w + dy, w + dx,
+                            world,
+                            maxVal,
+                            maxLength,
+                            noColor);
+            tvWriteTriangle(os,
+                            // w + dy, w + dx, w + dx + dy,
+                            w + dx, w + dy, w + dx + dy,
+                            world,
+                            maxVal,
+                            maxLength,
+                            noColor);
           }
       os.close();
 
