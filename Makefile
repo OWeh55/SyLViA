@@ -69,7 +69,6 @@ patterngen: patterngen.o v2sequence.o $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 
 clean_files:
 	-rm -f *.o depend *~ *orig
-	-rm -f .*.del_cache
 
 clean:	clean_files dep
 

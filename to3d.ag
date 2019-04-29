@@ -31,7 +31,13 @@ using namespace std;
   opt2: extension controls type of data
   opt2: .tv - triangle viewer format (tv)
   opt2: .xyz - point list with coordinates x, y and z
-  opt2: default (other extensions) is pointlist with x, y and z and colors r, g, b
+  opt2: .pov - povray file, use -P for mode selection
+  opt2: .inc - povray include file, use -P for mode selection
+  opt2: other extensions - pointlist with x, y and z and colors r, g, b
+  opt: P, povraymode, char, povrayMode, Mode for povray file, 't'
+  opt2: t - triangle
+  opt2: m - mesh
+  opt2: h - height field
   opt: n, nocolor, void, noColor, Ignore texture, false
   opt2:   storage of texture depends on output format
   opt: r, rotate, Void, rotateC, Rotate coordinates, false
@@ -171,17 +177,19 @@ void smear(SWorld& world, int sSize)
   int ySize = world.cols();
 
   matrix<Vector3d> newXyz(xSize, ySize);
-  newXyz.set(Vector3d(0, 0, 0));
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      newXyz[x][y] = world[x][y].position;
 
   for (int y = sSize; y < ySize - sSize; y++)
     for (int x = sSize; x < xSize - sSize; x++)
       {
-        SPixel& h = world[x][y];
+        const SPixel& h = world[x][y];
         if (h.valid)
           {
             Vector3d thisPos(h.position);
-            Vector3d xyzSum(0, 0, 0);
-            int vCount = 0;
+            Vector3d xyzSum(thisPos);
+            int vCount = 1;
             for (int dy = -sSize; dy <= sSize; dy++)
               {
                 int yi = y + dy;
@@ -196,10 +204,8 @@ void smear(SWorld& world, int sSize)
                       }
                   }
               }
-            if (vCount > 0)
+            if (vCount > 1)
               newXyz[x][y] = xyzSum / vCount;
-            else
-              newXyz[x][y] = thisPos;
           }
       }
   for (int y = 0; y < ySize; y++)
@@ -239,6 +245,25 @@ void tvWritePoints(ofstream& os, const SWorld& world)
               os << "P " << here.position.x << " " << here.position.y << " " << here.position.z << endl;
             else
               os << "P " << here.position.x << " " << -here.position.y << " " << -here.position.z << endl;
+          }
+      }
+}
+
+void writePoints(ofstream& os, const SWorld& world, int n)
+{
+  int xSize = world.rows();
+  int ySize = world.cols();
+
+  for (int y = 0; y < ySize; y++)
+    for (int x = 0; x < xSize; x++)
+      {
+        const SPixel& here = world[x][y];
+        if (here.valid && here.selected)
+          {
+            os << here.position.x << " " << here.position.y << " " << here.position.z << " " ;
+            if (n >= 6)
+              os << here.color.red << " " << here.color.green << " " << here.color.blue;
+            os << endl;
           }
       }
 }
@@ -285,6 +310,62 @@ void tvWriteTriangle(ostream& os,
               os << " " << cc.blue* fak / maxVal.blue << endl;
             }
           os << "T " << n1 << " " << n2 << " " << n3 << endl;
+        }
+    }
+}
+
+void povWriteTriangle(ostream& os,
+                      IPoint p1, IPoint p2, IPoint p3,
+                      const SWorld& world,
+                      const ColorValue& maxVal,
+                      double maxLength,
+                      bool ignoreColor)
+{
+  int n1 = world[p1.x][p1.y].nr;
+  int n2 = world[p2.x][p2.y].nr;
+  int n3 = world[p3.x][p3.y].nr;
+  if (n1 >= 0 && n2 >= 0 && n3 >= 0)
+    {
+      // second selection criteria: max edge length
+      Vector3d xyz1 = world[p1.x][p1.y].position;
+      Vector3d xyz2 = world[p2.x][p2.y].position;
+      Vector3d xyz3 = world[p3.x][p3.y].position;
+      if (
+        (xyz1 - xyz2).length() < maxLength &&
+        (xyz2 - xyz3).length() < maxLength &&
+        (xyz3 - xyz1).length() < maxLength
+      )
+        {
+          ColorValue c1 = world[p1.x][p1.y].color;
+          ColorValue c2 = world[p2.x][p2.y].color;
+          ColorValue c3 = world[p3.x][p3.y].color;
+          ColorValue cc = (c1 + c2 + c3) * 0.3333;
+#if 0
+          int maxv = 1;
+          if (cc.red > maxv) maxv = cc.red;
+          if (cc.green > maxv) maxv = cc.green;
+          if (cc.blue > maxv) maxv = cc.blue;
+          double fak = 255.0 / maxv;
+#else
+          double fak = 1.0;
+#endif
+          double r, g, b;
+          if (!ignoreColor)
+            {
+              r = cc.red * fak / maxVal.red;
+              g = cc.green * fak / maxVal.green;
+              b = cc.blue * fak / maxVal.blue;
+            }
+          else
+            r = g = b = 1.0;
+          os << "triangle {" << endl;
+#if 0
+          os << "//" << n1 << "," << n2 << "," << n3 << endl;
+#endif
+          os << "//" << p1 << "," << p2 << "," << p3 << endl;
+          os << xyz1 << "," << xyz2 << "," << xyz3 << endl;
+          os << "pigment { color rgb<" << r << "," << g << "," << b << ">}" << endl;
+          os << "}" << endl;
         }
     }
 }
@@ -471,43 +552,110 @@ int main(int argc, char** argv)
 
       numberValidAndSelectedPixel(world);
 
-      if (verbose)
-        cout << "writing points" << endl;
+      string ext = outFileName.getExtension();
 
-      // file for triangle viewer
-      string ofn(outFileName);
-      ofstream os(ofn);
+      if (ext == "tv")
+        {
+          // file for triangle viewer
+          if (verbose)
+            cout << "writing tv file" << endl;
+          string ofn(outFileName);
+          ofstream os(ofn);
 
-      // write valid and selected points to 3d file
-      tvWritePoints(os, world);
+          // write valid and selected points to 3d file
+          if (verbose)
+            cout << "writing points" << endl;
+          tvWritePoints(os, world);
 
-      IPoint dx(1, 0);
-      IPoint dy(0, 1);
+          IPoint dx(1, 0);
+          IPoint dy(0, 1);
 
-      if (verbose)
-        cout << "writing triangles" << endl;
+          if (verbose)
+            cout << "writing triangles" << endl;
 
-      for (int y = 0; y < ySize - 1; y++)
-        for (int x = 0; x < xSize - 1; x++)
-          {
-            IPoint w(x, y);
-            tvWriteTriangle(os,
-                            //w, w + dx, w + dy,
-                            w, w + dy, w + dx,
-                            world,
-                            maxVal,
-                            maxLength,
-                            noColor);
-            tvWriteTriangle(os,
-                            // w + dy, w + dx, w + dx + dy,
-                            w + dx, w + dy, w + dx + dy,
-                            world,
-                            maxVal,
-                            maxLength,
-                            noColor);
-          }
-      os.close();
+          for (int y = 0; y < ySize - 1; y++)
+            for (int x = 0; x < xSize - 1; x++)
+              {
+                IPoint w(x, y);
+                tvWriteTriangle(os,
+                                //w, w + dx, w + dy,
+                                w, w + dy, w + dx,
+                                world,
+                                maxVal,
+                                maxLength,
+                                noColor);
+                tvWriteTriangle(os,
+                                // w + dy, w + dx, w + dx + dy,
+                                w + dx, w + dy, w + dx + dy,
+                                world,
+                                maxVal,
+                                maxLength,
+                                noColor);
+              }
+          os.close();
+        }
+      else if (ext == "xyz")
+        {
+          if (verbose)
+            cout << "writing xyz file" << endl;
+          // write point file
+          string ofn(outFileName);
+          ofstream os(ofn);
+          writePoints(os, world, 3);
+        }
+      else if (ext == "pov" || ext == "inc")
+        {
+          if (verbose)
+            cout << "writing pov file" << endl;
 
+          // write povray file
+          string ofn(outFileName);
+          ofstream os(ofn);
+          switch (povrayMode)
+            {
+            case 't':
+            {
+              if (verbose)
+                cout << "writing triangles" << endl;
+
+              IPoint dx(1, 0);
+              IPoint dy(0, 1);
+
+              for (int y = 0; y < ySize - 1; y++)
+                for (int x = 0; x < xSize - 1; x++)
+                  {
+                    IPoint w(x, y);
+                    povWriteTriangle(os,
+                                     //w, w + dx, w + dy,
+                                     w, w + dy, w + dx,
+                                     world,
+                                     maxVal,
+                                     maxLength,
+                                     noColor);
+                    povWriteTriangle(os,
+                                     // w + dy, w + dx, w + dx + dy,
+                                     w + dx, w + dy, w + dx + dy,
+                                     world,
+                                     maxVal,
+                                     maxLength,
+                                     noColor);
+                  }
+            }
+            break;
+            case 'm':
+              break;
+            case 'h':
+              break;
+            }
+        }
+      else // default file with x,y,z, r,g,b
+        {
+          if (verbose)
+            cout << "writing x,y,z, r,g,b file" << endl;
+          string ofn(outFileName);
+          ofstream os(ofn);
+          writePoints(os, world, 6);
+        }
       if (display)
         {
           GetChar();
