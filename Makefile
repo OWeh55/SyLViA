@@ -37,8 +37,8 @@ v23d: v23d.o v2file.o v2analyse.o v2signal.o v2vector.o v2phases.o v2sequence.o 
 calibrate: calibrate.o calMarker.o v2file.o FileName.o $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o calibrate calibrate.o FileName.o calMarker.o v2file.o  $(MODELS) $(LIBS)
 
-to3d: to3d.o v2file.o FileName.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
-	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o v2file.o FileName.o $(MODELS) $(LIBS)	
+to3d: to3d.o v2file.o FileName.o structure.o $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
+	$(CXX) $(LOPT) $(LIBRARY) -o to3d to3d.o v2file.o FileName.o structure.o $(MODELS) $(LIBS)	
 
 testcalib: testcalib.o  $(MODELS) $(ICEDIR)/lib/$(MACHTYPE)/libice.a
 	$(CXX) $(LOPT) $(LIBRARY) -o testcalib testcalib.o  $(MODELS) $(LIBS)	

@@ -1,9 +1,12 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+
 #include "v23d.h"
 #include "image.h"
 #include "FileName.h"
+
+#include "to3d.h"
 
 #include "v2trafo.h"
 #include "v2file.h"
@@ -25,7 +28,7 @@ using namespace std;
   opt: Z, zmax, double, zMax, maximum z, 10000
   opt: l, maxlength, double, maxLength, maximum length of triangle edges, 1000
 
-  opt: s, smear, int, sSize, Size for averaging, 0
+  opt: s, smooth, int, sSize, Smoothing surface in given surroundings, 0
   opt: f, fillphases, int, fillSize, Interpolate unknown phases from neighbours, 0
   opt: o, outfile, string, outFile, Name of output file, "world.tv"
   opt2: extension controls type of data
@@ -46,52 +49,6 @@ using namespace std;
   opt: v, verbose, Void, verbose, be verbose, false
   opt: h, help, usage, , Help
 AppGen*/
-
-// class that contains all 3d data (pointcloud level)
-// does not contain u,v these are implizit in array idx
-// at the moment more or less a struct
-class SPixel
-{
-public:
-  SPixel():
-    color(0), phase(0), position(0, 0, 0), valid(false), selected(false), nr(-1)
-  {
-  }
-  ColorValue color;
-  double phase;
-  Vector3d position;
-  bool valid;
-  bool selected;
-  int nr;
-};
-
-typedef matrix<SPixel> SWorld;
-
-class SelectBox
-{
-public:
-  SelectBox(double xMin, double xMax,
-            double yMin, double yMax,
-            double zMin, double zMax):
-    xMin(xMin), xMax(xMax),
-    yMin(yMin), yMax(yMax),
-    zMin(zMin), zMax(zMax)
-  {
-  };
-  bool inRange(const Vector3d& xyz)
-  {
-    return  xyz.x >= xMin && xyz.x <= xMax &&
-            xyz.y >= yMin && xyz.y <= yMax &&
-            xyz.z >= zMin && xyz.z <= zMax;
-  }
-private:
-  double xMin;
-  double xMax;
-  double yMin;
-  double yMax;
-  double zMin;
-  double zMax;
-};
 
 void compute3d(const SLModel& model, SWorld& world)
 {
@@ -546,8 +503,8 @@ int main(int argc, char** argv)
       if (sSize > 0)
         {
           if (verbose)
-            cout << "filtering smear" << endl;
-          smear(world, sSize);
+            cout << "smoothing" << endl;
+          smooth(world, sSize);
         }
 
       numberValidAndSelectedPixel(world);
