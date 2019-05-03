@@ -126,8 +126,6 @@ int main(int argc, char** argv)
       cout << endl;
 #endif
 
-
-
       FileName filename(fn);
 
       bool shallWriteResult = false;
@@ -187,6 +185,9 @@ int main(int argc, char** argv)
 
       if (nSequences == 0)
         throw IceException("analysis", "No sequences found");
+
+      for (int i = 0; i <= nSequences; i++)
+        sequenceBoundaries[i] += first;
 
       FileName resDir(filename);
       resDir.setExtension("");
