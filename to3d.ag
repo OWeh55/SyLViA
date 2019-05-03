@@ -20,16 +20,18 @@ using namespace std;
   para: filename, required, string, baseFileName, Filename of phase or texture image, ""
   opt: c, calibfile, string, calibFilename, Name of calibration file,""
   opt: p, phaseresolution, double, phaseResolution, Resolution of phase image, 32.0
+  opt: f, fillphases, int, fillSize, Interpolate unknown phases from neighbours, 0
+  opt: s, smooth, int, sSize, Smoothing surface in given surroundings, 0
+  opt: C, center, void, center, Center point cloud, false
   opt: x, xmin, double, xMin, minimum x, -10000
   opt: X, xmax, double, xMax, maximum x, 10000
   opt: y, ymin, double, yMin, minimum y, -10000
   opt: Y, ymax, double, yMax, maximum y, 10000
   opt: z, zmin, double, zMin, minimum z, -10000
   opt: Z, zmax, double, zMax, maximum z, 10000
+
   opt: l, maxlength, double, maxLength, maximum length of triangle edges, 1000
 
-  opt: s, smooth, int, sSize, Smoothing surface in given surroundings, 0
-  opt: f, fillphases, int, fillSize, Interpolate unknown phases from neighbours, 0
   opt: o, outfile, string, outFile, Name of output file, "world.tv"
   opt2: extension controls type of data
   opt2: .tv - triangle viewer format (tv)
@@ -126,6 +128,12 @@ ColorValue getMaxColorValue(const SWorld& world)
           }
       }
   return maxColor;
+}
+
+void updateMinMax(double val, double& min, double& max)
+{
+  if (val < min) min = val;
+  if (val > max) max = val;
 }
 
 void smear(SWorld& world, int sSize)
@@ -509,6 +517,49 @@ int main(int argc, char** argv)
         }
 
       numberValidAndSelectedPixel(world);
+
+      // center point cloud
+      if (center)
+        {
+          if (verbose)
+            cout << "center selected point cloud" << endl;
+          double xMinS = xMax;
+          double xMaxS = xMin;
+          double yMinS = yMax;
+          double yMaxS = yMin;
+          double zMinS = zMax;
+          double zMaxS = zMin;
+
+          for (int y = 0; y < ySize; y++)
+            for (int x = 0; x < xSize; x++)
+              {
+                const SPixel& here = world[x][y];
+                if (here.valid && here.selected)
+                  {
+                    updateMinMax(here.position.x, xMinS, xMaxS);
+                    updateMinMax(here.position.y, yMinS, yMaxS);
+                    updateMinMax(here.position.z, zMinS, zMaxS);
+                  }
+              }
+          cout << "x: " << xMinS << " ... " << xMaxS << endl;
+          cout << "y: " << yMinS << " ... " << yMaxS << endl;
+          cout << "z: " << zMinS << " ... " << zMaxS << endl;
+          double xShift = (xMinS + xMaxS) / 2;
+          double yShift = (yMinS + yMaxS) / 2;
+          double zShift = (zMinS + zMaxS) / 2;
+          cout << xShift << " " << yShift << " " << zShift << endl;
+          for (int y = 0; y < ySize; y++)
+            for (int x = 0; x < xSize; x++)
+              {
+                SPixel& here = world[x][y];
+                if (here.valid && here.selected)
+                  {
+                    here.position.x -= xShift;
+                    here.position.y -= yShift;
+                    here.position.z -= zShift;
+                  }
+              }
+        }
 
       string ext = outFileName.getExtension();
 

@@ -104,7 +104,10 @@ void smooth(SWorld& world, int dist)
   for (int y = 0; y < ySize; y++)
     {
       if (verbose)
-        cout << "line " << y << endl;
+        {
+          cout << ".";
+          cout.flush();
+        }
       for (int x = 0; x < xSize; x++)
         {
           //    cout << ".";cout.flush();
@@ -143,6 +146,8 @@ void smooth(SWorld& world, int dist)
   for (int y = 0; y < ySize; y++)
     for (int x = 0; x < xSize; x++)
       world[x][y].position = newXyz[x][y];
+  if (verbose)
+    cout << endl;
 }
 
 #if 0
