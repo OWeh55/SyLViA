@@ -318,10 +318,11 @@ void povWriteTriangle(ostream& os,
           os << "triangle {" << endl;
 #if 0
           os << "//" << n1 << "," << n2 << "," << n3 << endl;
-#endif
           os << "//" << p1 << "," << p2 << "," << p3 << endl;
+#endif
           os << xyz1 << "," << xyz2 << "," << xyz3 << endl;
-          os << "pigment { color rgb<" << r << "," << g << "," << b << ">}" << endl;
+          if (!ignoreColor)
+            os << "pigment { color rgb<" << r << "," << g << "," << b << ">}" << endl;
           os << "}" << endl;
         }
     }
