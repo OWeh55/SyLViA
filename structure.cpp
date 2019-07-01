@@ -124,7 +124,7 @@ void smooth(SWorld& world, int dist)
                   Eigenvalue(st, eval, evect);
                   // cout << eval << endl;
                   // check for plane
-                  if (true || eval[2] < 0.2 * eval[1] && eval[1] > 0.5 * eval[0])
+                  if (eval[2] < 0.2 * eval[1] && eval[1] > 0.5 * eval[0])
                     {
                       // assume plane
                       Vector3d normal(evect[2]);
