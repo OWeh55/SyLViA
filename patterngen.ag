@@ -16,7 +16,7 @@ using namespace std;
 
   opt: H, horizontal, void, horizontal, Horizontal pattern, false
 
-  opt: s, sequence, string, sequence, Pattern description, "087654321sc"
+  opt: s, sequence, string, sequence, Pattern description, "987654321sc"
   opt2:  b - black
   opt2:  w - white
   opt2:  c - cosinus

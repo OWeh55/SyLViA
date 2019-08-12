@@ -38,8 +38,8 @@ using namespace std;
   opt: c, cyclelength, int, cycleLength, Approximate cycle length (skip coarse detection), -1
   opt: s, cyclestart, int, cycleStart, First frame of cycle (skip coarse detection), -1
 
-  opt: T, threshold, Double, thresholdg, Threshold for graycode detection, 5
-  opt: t, threshold, Double, thresholdp, Threshold for phase detection, 1
+  opt: T, graythreshold, Double, thresholdg, Threshold for graycode detection, 5
+  opt: t, phasethreshold, Double, thresholdp, Threshold for phase detection, 1
 
   opt: S, sequence, String, sequenceDescription, Description of sequence, "987654321sc"
   opt2: Meaning of characters
